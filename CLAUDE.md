@@ -8,6 +8,38 @@ Inkwell 是三个独立、可组合的 Claude Code 技能，覆盖内容工作�
 - `inkwell-search/` — 语义搜索、向量索引（FAISS），通用文档检索
 - `inkwell-write/` — AI 辅助讨论 + 文章创作，自动关联历史素材
 
+日常内容工作（采集、分析、创作）在 `~/writing/web-analysis/` 进行。使用过程中发现的 Skill 改进在此仓库同步和版本管理。
+
+## 目录结构
+
+```
+inkwell-skills/
+├── README.md
+├── CLAUDE.md
+├── .gitignore
+├── docs/
+│   └── specs/                 ← Skill 设计文档
+│       ├── 2026-07-16-collection-subsystem-design.md
+│       ├── 2026-07-20-retrieval-skill-design.md
+│       └── 2026-07-20-discuss-create-skill-design.md
+├── plan/                      ← Skill 开发规划
+│   ├── task_plan.md           ← 架构、阶段、决策
+│   ├── findings.md            ← 技术选型、设计决策
+│   └── progress.md            ← 开发进展日志
+├── inkwell-capture/           ← clip (剪藏) Skill
+│   ├── SKILL.md
+│   ├── scripts/
+│   └── references/
+├── inkwell-search/            ← thread (牵丝) Skill
+│   ├── SKILL.md
+│   ├── scripts/
+│   └── references/
+└── inkwell-write/             ← forge (熔裁) Skill
+    ├── SKILL.md
+    ├── scripts/
+    └── references/
+```
+
 ## 分支策略
 
 ```
