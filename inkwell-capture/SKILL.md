@@ -1,12 +1,11 @@
 ---
-name: clip
+name: inkwell-capture
 description: >
-  Inkwell 剪藏技能。采集网页文章、论坛帖子、截图 OCR 和图片分析。
-  当用户发送链接、截图、提及"采集""抓取""剪藏""归档""OCR"时触发。
-  也适用于用户分享文章要讨论、保存参考材料、或需要从网页提取内容时。
+  Inkwell capture — 网页采集、爬虫、截图 OCR、图片分析。
+  当用户发送链接、截图、提及"采集""抓取""爬虫""归档""OCR""保存网页"时触发。
 ---
 
-# clip — 剪藏
+# inkwell-capture
 
 接收用户提供的链接/文件，自动识别类型，调用独立脚本处理，输出归档 Markdown 到 `archived/` 目录。
 
@@ -31,7 +30,7 @@ description: >
      obsidian_root: ""
    ```
 3. 询问 Hugo/Obsidian 路径（可跳过）
-4. 检查 thread 是否已安装（可选，`ls .claude/skills/thread/`）
+4. 检查 inkwell-search 是否已安装（可选，`ls .claude/skills/inkwell-search/`）
 
 ## 执行流程
 
@@ -39,9 +38,9 @@ description: >
 - `.web-analysis.yaml` 存在 → 继续
 - 不存在 → 执行初始化
 
-### Step 1.5: 检查 thread
-- 检查 `.claude/skills/thread/` 是否存在
-- 已安装 → 后续去重和索引走 thread
+### Step 1.5: 检查 inkwell-search
+- 检查 `.claude/skills/inkwell-search/` 是否存在
+- 已安装 → 后续去重和索引走 inkwell-search
 - 未安装 → 跳过语义去重和索引追加，精确去重仍生效
 
 ### Step 2: 识别输入类型
@@ -90,13 +89,13 @@ ocr_text.py (PaddleOCR)
 **精确匹配（始终生效）：**
 - 扫描 `archived/` 中所有 article.md 的 frontmatter `source` 字段
 - 同 URL → "这个链接已于 YYYY-MM-DD 采集过。更新 / 跳过？"
-  - 更新 → 调 thread 的 `compare` 比较新旧内容（阈值 0.85）
+  - 更新 → 调 inkwell-search 的 `compare` 比较新旧内容（阈值 0.85）
     - ≥ 0.85 → 覆盖原 article.md，索引原地更新
     - < 0.85 → 建议新建归档，based_on 关联旧条目
   - 跳过 → 终止
 
-**语义去重（thread 已安装时）：**
-- 调 thread 的 `searcher.py search --granularity doc --top-k 1 --threshold 0.95`
+**语义去重（inkwell-search 已安装时）：**
+- 调 inkwell-search 的 `searcher.py search --granularity doc --top-k 1 --threshold 0.95`
 - 相似度 ≥ 0.95 → "发现高度相似内容：[path]。关联 / 跳过？"
 - 仅建议，用户决定
 
@@ -134,11 +133,11 @@ archiver.py 负责：
 - 写入 `article.md`（YAML frontmatter + Markdown body）
 - 下载图片到 `images/`
 
-如果 thread 已安装，追加索引：
+如果 inkwell-search 已安装，追加索引：
 ```bash
-python ../thread/scripts/indexer.py index --path "<path>" --text "<title + summary + tags + body>"
+python ../inkwell-search/scripts/indexer.py index --path "<path>" --text "<title + summary + tags + body>"
 ```
-（跨 skill 调用 thread 的索引脚本）
+（跨 skill 调用 inkwell-search 的索引脚本）
 
 ### Step 8: 呈现结果 → 衔接讨论创作
 
@@ -148,7 +147,7 @@ python ../thread/scripts/indexer.py index --path "<path>" --text "<title + summa
    🏷 {category} | {tags}
    📝 {summary}
 
-要讨论这篇吗？（衔接 forge Skill）
+要讨论这篇吗？（衔接 inkwell-write）
 ```
 
 ## 脚本接口约定
@@ -211,7 +210,7 @@ publish:
 ├── archived/YYYYMMDD/{slug}/
 │   ├── article.md
 │   └── images/
-└── .claude/skills/clip/
+└── .claude/skills/inkwell-capture/
     ├── SKILL.md
     ├── scripts/
     │   ├── web_fetch.py

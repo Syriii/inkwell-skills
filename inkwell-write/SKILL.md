@@ -1,14 +1,13 @@
 ---
-name: forge
+name: inkwell-write
 description: >
-  Inkwell 熔裁技能。基于素材进行讨论分析或文章创作。一个 Skill，两种模式：
-  讨论模式 — 分析材料、讨论话题、质疑观点、延伸思考，多轮对话+结构化分析；
-  创作模式 — 写文章、写博客、写公众号、整理观点输出，五步流程产出。
-  当用户想讨论某个话题、分析材料、或创作文章时触发。也适用于采集完成后
-  说"讨论这篇"、"基于这些写一篇"。关联 thread Skill，自动注入相关历史内容。
+  Inkwell write — AI 辅助讨论和文章创作。两种模式：
+  讨论模式 — 多轮对话分析材料、延伸思考；
+  创作模式 — 五步流程产出文章。自动关联 inkwell-search 注入相关历史内容。
+  当用户想讨论话题、分析材料、或写文章时触发。
 ---
 
-# forge — 熔裁
+# inkwell-write
 
 一个 Skill，两种模式。**先讨论再创作是常态**，也可直接进入创作模式。
 
@@ -16,8 +15,8 @@ description: >
 
 首次触发时执行：
 
-1. **检查 thread Skill**
-   - 检查 `.claude/skills/thread/` 是否存在
+1. **检查 inkwell-search**
+   - 检查 `.claude/skills/inkwell-search/` 是否存在
    - 不存在 → 自动安装（静默，用户无感）
    - 确认 `.retrieval-index/config.json` 的 `source_dirs` 包含 `topics`，没有则追加
 
@@ -39,10 +38,10 @@ description: >
 
 ### 入口动作
 
-每次讨论开始时自动调 thread Skill：
+每次讨论开始时自动调 inkwell-search：
 
 ```bash
-python .claude/skills/thread/scripts/searcher.py search \
+python .claude/skills/inkwell-search/scripts/searcher.py search \
   --query "<主题>" --granularity both --top-k 5 --threshold 0.75
 ```
 
@@ -100,7 +99,7 @@ python scripts/references_builder.py update \
 
 #### Step 1: 定方向
 1. 用户给主题或素材
-2. 调 thread Skill 自动注入相关素材（同讨论模式）
+2. 调 inkwell-search 自动注入相关素材（同讨论模式）
 3. 讨论确定：文章角度、语气、篇幅、目标读者
 4. 用户确认 ✓
 
@@ -131,7 +130,7 @@ python scripts/draft_writer.py write \
 1. 用户反馈 → Claude 修改
 2. 新旧版本比较：
 ```bash
-python .claude/skills/thread/scripts/searcher.py compare \
+python .claude/skills/inkwell-search/scripts/searcher.py compare \
   --text-a "<旧版>" --text-b "<新版>" --strategy auto
 ```
 - ≥ 0.85 → 小改动，`draft_writer.py write` 原地更新
@@ -144,7 +143,7 @@ python .claude/skills/thread/scripts/searcher.py compare \
 
 ### 跨讨论创作
 
-thread Skill 拉所有相关素材，Claude 自动整合。产出落在当前 topic 下；跨多个 topic 由用户决定放置位置。
+inkwell-search 拉所有相关素材，Claude 自动整合。产出落在当前 topic 下；跨多个 topic 由用户决定放置位置。
 
 ---
 

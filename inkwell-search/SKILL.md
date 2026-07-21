@@ -1,13 +1,12 @@
 ---
-name: thread
+name: inkwell-search
 description: >
-  Inkwell 牵丝技能。语义索引和搜索工具。当用户想对文档内容进行语义搜索、
-  查找相关文档、检查内容相似度、建立或更新索引时触发。也适用于
-  "帮我索引这些文件""搜索XX相关的内容""这篇文章跟已有的有没有重复"等场景。
-  这是一个通用工具——只知道"文档"和"向量"，不理解任何业务字段。
+  Inkwell search — 语义搜索、向量索引、内容相似度检测。当用户想搜索文档、
+  查找相关内容、建立索引、检查内容重复时触发。基于 FAISS，通用工具——
+  只知道"文档"和"向量"，不理解业务字段。
 ---
 
-# thread — 牵丝
+# inkwell-search
 
 通用的语义索引和搜索工具。保持**纯粹**——知道"文档"和"向量"，不知道业务字段（tags、category、title 等）。
 
@@ -120,7 +119,7 @@ python scripts/searcher.py compare --text-a "<text>" --text-b "<text>" [--strate
 │   ├── config.json
 │   ├── doc.index / doc_map.json
 │   └── chunk.index / chunk_map.json
-└── .claude/skills/thread/    ← Skill 本身
+└── .claude/skills/inkwell-search/    ← Skill 本身
     ├── SKILL.md
     ├── scripts/
     │   ├── indexer.py
