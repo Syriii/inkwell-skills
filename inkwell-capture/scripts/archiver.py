@@ -36,32 +36,38 @@ from urllib.parse import urlparse
 # ---------------------------------------------------------------------------
 
 def make_slug(title: str) -> str:
-    """从标题生成 URL 安全的 slug。
+    """从标题生成目录名。
 
-    优先提取英文单词，纯中文则用日期+hash 做唯一标识。
+    中文标题直接使用原文字（清理非法字符），非中文标题使用英文 slug。
     注意：这是脚本兜底方案，理想情况下 slug 由 Claude Code 在工作流中生成。
 
     >>> make_slug("欧盟AI法案最终解读")
-    'eu-ai-act-20260721'
+    '欧盟AI法案最终解读'
+    >>> make_slug("How to Learn Python in 2024")
+    'how-to-learn-python-in-2024'
     """
     slug = title.strip()
 
-    # 提取英文单词（≥2 字母）和数字
-    tokens = re.findall(r'[a-zA-Z]{2,}|\d+', slug)
-    if tokens:
-        slug = '-'.join(t.lower() for t in tokens[:5])
+    has_chinese = bool(re.search(r'[一-鿿]', slug))
+    if has_chinese:
+        # 中文标题：直接使用，清理文件名非法字符
+        slug = re.sub(r'[\\/:*?"<>|]', '', slug)
+        slug = slug[:60].strip()
     else:
-        # 纯中文：提取拼音不可靠，用日期+hash 保证唯一性
-        today = datetime.now().strftime("%m%d")
-        import hashlib
-        h = hashlib.md5(title.encode()).hexdigest()[:6]
-        slug = f"article-{today}-{h}"
+        # 非中文标题：提取英文单词
+        tokens = re.findall(r'[a-zA-Z]{2,}|\d+', slug)
+        if tokens:
+            slug = '-'.join(t.lower() for t in tokens[:5])
+        else:
+            today = datetime.now().strftime("%m%d")
+            import hashlib
+            h = hashlib.md5(title.encode()).hexdigest()[:6]
+            slug = f"article-{today}-{h}"
+        slug = slug[:60].strip('-')
+        if len(slug) < 5:
+            today = datetime.now().strftime("%m%d")
+            slug = f"{slug}-{today}"
 
-    slug = slug[:60].strip('-')
-    # 太短则加日期后缀保证可辨识
-    if len(slug) < 5:
-        today = datetime.now().strftime("%m%d")
-        slug = f"{slug}-{today}"
     return slug or 'untitled'
 
 

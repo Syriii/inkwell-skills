@@ -57,89 +57,174 @@ description: >
 | 文字类截图 | 用户选文字类 | `ocr_text.py` |
 | 不确定 | 以上都不是 | **阻塞询问** |
 
-### Step 3: 执行采集 + 降级
+### Step 3: Dispatch 采集 Subagent
 
-**网页抓取降级链（自动，不中断）：**
+使用 Agent 工具启动一个 subagent，将实际的采集、处理、归档工作委托给它。这允许采集在后台并行执行，不影响主会话的讨论。
+
+**单个链接：** 创建一个 subagent
+
+**多个链接：** 为每个链接创建独立的 subagent 并行执行，或为一个 subagent 提供批量指令。并行 subagent 更快，但批量 subagent 可以共享去重和标签扫描结果。
+
+#### Subagent Prompt 模板
+
+将以下内容作为 subagent 的 prompt，替换 `{url}`, `{采集类型}`, `{inkwell-search 状态}` 等占位符：
+
 ```
-web_fetch.py (requests + trafilatura)
-  ↓ 失败（状态码错误/超时/内容为空）
-web_fetch_full.py (Playwright 渲染)
-  ↓ 失败
-告知用户降级方案：
-  - 手动复制全文粘贴
-  - 截全页滚动图 → OCR
-  - 尝试 archive.org / Google Cache
+你是一个内容采集 agent。请按照以下流程采集并归档内容。
+
+**采集目标**: {url}
+**采集类型**: {webpage / forum / image-ocr}
+**Cookie 来源**: {从 .env 读取 / 无}
+**工作目录**: /Users/xiesh/writing/web-analysis
+**inkwell-search 状态**: {已安装 / 未安装}
+**配置**: .web-analysis.yaml → crawl_delay={delay}, comment_limit={limit}
+
+## 可用工具
+
+Bash, Read, Write, Edit, Grep, Glob
+
+## 执行流程
+
+### 1. 执行采集脚本
+
+根据采集类型选择脚本，在 /Users/xiesh/writing/web-analysis 目录下执行。
+
+**普通网页 (webpage)**:
+```
+conda run -n web-analysis python .claude/skills/inkwell-capture/scripts/web_fetch.py "{url}"
+```
+失败时自动降级：
+```
+conda run -n web-analysis python .claude/skills/inkwell-capture/scripts/web_fetch_full.py "{url}"
+```
+降级链：403/401 → 检查 .env 中的域名 Cookie，通过 --cookie 参数传入 → 仍失败则返回错误。其他错误（超时/内容为空）→ 自动降级到 web_fetch_full.py → 仍失败则返回手动方案建议。
+
+**论坛帖子 (forum)**:
+```
+conda run -n web-analysis python .claude/skills/inkwell-capture/scripts/forum_scraper.py "{url}"
 ```
 
-**OCR 降级链（自动）：**
-```
-ocr_text.py (PaddleOCR)
-  ↓ 质量差（置信度低 + KenLM 困惑度高）
-告知用户可尝试 Surya 或手动处理
-```
+**截图 OCR (image-ocr)**: 使用 ocr_text.py 或直接在对话中分析图片内容。
 
-**批量采集时报告进度：**
-- "第 N/M 个，正采集 [标题或链接]，已完成 ✓/✗"
+脚本输出 JSON（stdout），包含 type, source, date, author, body, word_count, images 等字段。
 
-**评论阈值检查：**
-- 论坛/评论区回复数 > 500（config 中 comment_limit）→ 询问用户：全部保留 / 截断？
+### 2. 验证采集结果
 
-### Step 4: 内容去重检查
+检查脚本输出：
+- body 为空或 word_count < 50 → 尝试降级脚本
+- 所有脚本都失败 → 返回错误：`❌ 采集失败：[url]` + 原因 + 手动方案建议
+- 论坛评论数 > comment_limit → 备注"评论数超阈值，已截断"
 
-**精确匹配（始终生效）：**
-- 扫描 `archived/` 中所有 article.md 的 frontmatter `source` 字段
-- 同 URL → "这个链接已于 YYYY-MM-DD 采集过。更新 / 跳过？"
-  - 更新 → 调 inkwell-search 的 `compare` 比较新旧内容（阈值 0.85）
-    - ≥ 0.85 → 覆盖原 article.md，索引原地更新
-    - < 0.85 → 建议新建归档，based_on 关联旧条目
-  - 跳过 → 终止
+### 3. 去重检查
 
-**语义去重（inkwell-search 已安装时）：**
-- 调 inkwell-search 的 `searcher.py search --granularity doc --top-k 1 --threshold 0.95`
-- 相似度 ≥ 0.95 → "发现高度相似内容：[path]。关联 / 跳过？"
-- 仅建议，用户决定
-
-### Step 5: 图片采集
-
-网页内发现图片时：
-- 1-2 张 → 自动下载到 `images/`
-- 3-20 张 → "发现 N 张图片，要下载吗？"
-- 20+ 张 → "这篇有 N 张图片。都下载 / 只看正文 / 你来选？"
-
-下载使用 `requests`，保存到 `archived/YYYYMMDD/{slug}/images/`。
-
-### Step 6: 生成理解字段
-
-Claude Code 阅读脚本输出的 body，生成：
-
-1. **title** — 文章标题
-2. **category** — 粗粒度分类，优先复用已有分类（grep `category:` 扫描 archived/ 和 topics/）
-3. **tags** — 细粒度标签（2-4字为主），优先复用已有标签（grep `tags:` 扫描 archived/ 和 topics/）
-4. **summary** — 1-2 句内容摘要
-
-**确认策略**：批量采集默认自动确认，仅异常时提醒。
-
-### Step 7: 写入归档
-
-将脚本输出 + Claude Code 生成的字段合并为完整 JSON，传入 archiver.py：
-
+**精确匹配**：扫描 archived/ 中所有 article.md 的 source 字段
 ```bash
-python scripts/archiver.py --json '<json>'
+grep -rl "source: {url}" archived/ --include="article.md"
 ```
+- 匹配到 → 返回 "⚠️ 链接已于 YYYY-MM-DD 采集过 (archived/.../)。请主会话决定：覆盖 / 跳过？"
+- 未匹配 → 继续
 
-archiver.py 负责：
-- 根据采集日期创建 `archived/YYYYMMDD/{slug}/` 目录
-- slug 由 Claude Code 从 title 生成
-- 写入 `article.md`（YAML frontmatter + Markdown body）
-- 下载图片到 `images/`
-
-如果 inkwell-search 已安装，追加索引：
+**语义去重**（仅 inkwell-search 已安装时）：
 ```bash
-python ../inkwell-search/scripts/indexer.py index --path "<path>" --text "<title + summary + tags + body>"
+cd /Users/xiesh/writing
+conda run -n web-analysis python inkwell-skills/inkwell-search/scripts/searcher.py search --granularity doc --top-k 1 --threshold 0.95 --query "{title + summary}"
 ```
-（跨 skill 调用 inkwell-search 的索引脚本）
+- 相似度 ≥ 0.95 → 返回 "⚠️ 发现高度相似内容：[path]，相似度 {score}。请主会话决定是否仍然归档。"
+- 语义去重不阻塞归档，仅作提示
 
-### Step 8: 呈现结果 → 衔接讨论创作
+### 4. 图片下载
+
+如果脚本输出的 images 数组非空：
+- 1-2 张 → 自动下载到 archived/YYYYMMDD/{slug}/images/
+- 3+ 张 → 报告数量，不自动下载（由主会话决定）
+
+### 5. 生成理解字段
+
+基于脚本输出的 body 内容，生成：
+
+1. **title** — 文章标题（脚本已提取则优先使用）
+2. **category** — 粗粒度分类，扫描已有分类作为参考：
+   ```bash
+   grep -h "^category:" archived/**/article.md topics/**/*.md 2>/dev/null | sort | uniq -c | sort -rn | head -20
+   ```
+3. **tags** — 2-4字标签，3-5 个，扫描已有标签作为参考：
+   ```bash
+   grep -h "tags:" archived/**/article.md topics/**/*.md 2>/dev/null | tr ',' '\n' | sort | uniq -c | sort -rn | head -30
+   ```
+4. **summary** — 1-2 句中文内容摘要
+
+### 6. 写入归档
+
+组装完整 JSON（合并脚本输出 + 生成的字段）：
+```json
+{
+  "type": "...",
+  "source": "...",
+  "date": "...",
+  "author": "...",
+  "body": "...",
+  "word_count": N,
+  "images": [...],
+  "title": "...",
+  "category": "...",
+  "tags": ["...", "..."],
+  "summary": "..."
+}
+```
+
+调用 archiver.py：
+```bash
+cd /Users/xiesh/writing/web-analysis
+conda run -n web-analysis python .claude/skills/inkwell-capture/scripts/archiver.py --json '<json>'
+```
+
+archiver.py 自动创建 archived/YYYYMMDD/{slug}/ 目录并写入 article.md。
+
+如果 inkwell-search 已安装，追加 FAISS 索引：
+```bash
+cd /Users/xiesh/writing
+conda run -n web-analysis python inkwell-skills/inkwell-search/scripts/indexer.py index --path "web-analysis/archived/YYYYMMDD/{slug}/article.md" --text "{title + summary + tags + body 前 500 字}"
+```
+
+### 7. 返回结果
+
+采集完成，返回以下格式的摘要：
+
+```
+✅ 已归档：[title]
+   📁 archived/YYYYMMDD/{slug}/
+   🏷 {category} | {tags}
+   📝 {summary}
+   📝 字数: {word_count}
+
+[有图片] 🖼 已下载 N 张图片
+[有警告] ⚠️ 注意事项：...
+```
+
+失败时返回：
+```
+❌ 采集失败：[url]
+   原因：{错误信息}
+   建议：{降级方案}
+```
+```
+
+#### Subagent 配置
+
+- **subagent_type**: 不指定，使用默认的 general-purpose agent
+- **description**: 简短描述如 "采集 {url 或标题}"
+- Cookie 处理：subagent 可以 Read .env 文件读取已存储的 Cookie
+- Playwright：subagent 使用本地的 Playwright（web_fetch_full.py），不需要 MCP browser
+- 图片分析和字段生成：subagent 具备 Claude 能力，可以直接完成
+
+### Step 4: 呈现结果
+
+Subagent 完成后，将结果展示给用户。
+
+- **成功** → 显示归档摘要，询问"要讨论这篇吗？（衔接 inkwell-write）"
+- **失败** → 显示错误信息和建议方案，询问是否手动处理
+- **批量采集** → 汇总所有 subagent 的结果，报告成功/失败数量
+- **去重提示** → 如果 subagent 返回了去重警告，让用户决定覆盖/跳过
 
 ```
 ✅ 已归档：[title]

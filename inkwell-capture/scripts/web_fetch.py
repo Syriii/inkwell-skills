@@ -14,6 +14,7 @@
 
 import argparse
 import json
+import os
 import re
 import sys
 import time
@@ -23,6 +24,10 @@ from urllib.parse import urljoin, urlparse
 import requests
 import trafilatura
 from trafilatura.metadata import extract_metadata
+
+# 自动读取 .env 中保存的 Cookie（当前脚本目录）
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from cookie_store import get_cookie_for_url  # noqa: E402
 
 
 def fetch(url: str, cookie: str | None = None, timeout: int = 30) -> dict:
@@ -164,8 +169,11 @@ def main():
 
     args = parser.parse_args()
 
+    # --cookie 未指定时，从 .env 自动读取
+    cookie = args.cookie or get_cookie_for_url(args.url)
+
     try:
-        result = fetch(args.url, args.cookie, args.timeout)
+        result = fetch(args.url, cookie, args.timeout)
         json.dump(result, sys.stdout, ensure_ascii=False, indent=2)
         print()
         sys.exit(1 if "error" in result else 0)

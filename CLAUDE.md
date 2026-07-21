@@ -48,25 +48,7 @@ master   ← 稳定发布版本（只接受来自 develop 的合并）
 develop  ← 日常开发分支（所有改动先提交到这里）
 ```
 
-- **`master`**：稳定版本，仅从 `develop` 合并，不直接提交。
-- **`develop`**：日常开发分支，所有新功能、修复、重构都先提交到此分支。
-- 当一个版本明确、稳定后，将 `develop` 合并到 `master` 并打 tag。
-
-### 工作流程
-
-```bash
-# 日常开发在 develop 上
-git checkout develop
-git add ...
-git commit -m "feat: ..."
-git push origin develop
-
-# 版本发布时合并到 master
-git checkout master
-git merge develop
-git push origin master
-git checkout develop  # 回到 develop 继续开发
-```
+日常开发在 `develop` 分支，版本稳定后合并到 `master` 并打 tag。
 
 ## 仓库
 

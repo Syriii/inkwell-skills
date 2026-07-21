@@ -54,7 +54,8 @@ archiver.py
 
 | 错误 | 含义 | 处理 |
 |------|------|------|
-| `request_failed` | HTTP 请求失败 | 降级到 L2 或手动 |
+| `request_failed` | HTTP 请求失败（403/401） | 查 cookie-guide.md，引导用户提供 Cookie 重试 |
+| `request_failed` | HTTP 请求失败（其他） | 降级到 L2 或手动 |
 | `trafilatura_extraction_failed` | 无法提取正文 | 降级到 L2 |
 | `playwright_not_installed` | Playwright 缺失 | 告知安装方式 |
 | `playwright_navigation_failed` | 页面加载失败 | 降级到手动 |

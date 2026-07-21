@@ -13,10 +13,15 @@ JavaScript 渲染页面的正文提取，作为 L1（web_fetch.py）的降级方
 
 import argparse
 import json
+import os
 import re
 import sys
 from datetime import datetime
 from urllib.parse import urljoin
+
+# 自动读取 .env 中保存的 Cookie（当前脚本目录）
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from cookie_store import get_cookie_for_url  # noqa: E402
 
 
 def fetch_full(url: str, cookie: str | None = None,
@@ -185,8 +190,11 @@ def main():
 
     args = parser.parse_args()
 
+    # --cookie 未指定时，从 .env 自动读取
+    cookie = args.cookie or get_cookie_for_url(args.url)
+
     try:
-        result = fetch_full(args.url, args.cookie, args.wait, args.timeout)
+        result = fetch_full(args.url, cookie, args.wait, args.timeout)
         json.dump(result, sys.stdout, ensure_ascii=False, indent=2)
         print()
         sys.exit(1 if "error" in result else 0)
