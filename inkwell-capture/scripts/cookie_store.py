@@ -26,6 +26,8 @@ DOMAIN_COOKIE_MAP = {
     "v2ex.com": "V2EX_COOKIE",
     "xiaohongshu.com": "XHS_COOKIE",
     "xhslink.com": "XHS_COOKIE",
+    "zhihu.com": "ZHIHU_COOKIE",
+    "www.zhihu.com": "ZHIHU_COOKIE",
 }
 
 
