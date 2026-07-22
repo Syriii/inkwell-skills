@@ -202,6 +202,113 @@ def _extract_nga_images(text: str) -> list[str]:
     return urls
 
 
+def _clean_nga_bbcode(text: str) -> str:
+    """清理 NGA BBCode 标签，转换为 Markdown。
+
+    处理顺序（从内到外，参考 references/nga-bbcode.md）：
+      1. 表情 [s:...]          → 移除
+      2. 回复引用 [pid]...[/pid] → 移除
+      3. @提及 [@]...[/@]       → @name
+      4. 用户提及 [uid]...[/uid]  → @name
+      5. 图片 [img]...[/img]    → 移除（URL 已单独提取）
+      6. 内联格式 (b/i/u/del/color/size) → 迭代转换
+      7. 链接 [url]              → Markdown 链接
+      8. 引用 [quote]            → Markdown > 引用
+      9. 折叠 [collapse]         → HTML <details>
+      10. 代码 [code]            → Markdown ``` 代码块
+      11. 列表 [list]            → Markdown 列表
+      12. 标题 [h1]/[h2]/[h3]    → Markdown #
+      13. 末尾"改动"标记         → 移除
+      14. 残留标签碎片            → 清理
+    """
+    # === 1. 表情标签 [s:ac:xx] [s:a2:xx] ===
+    text = re.sub(r'\[s:[^\]]+\]', '', text)
+
+    # === 2. [pid=xxx]Reply[/pid] → 移除 ===
+    text = re.sub(r'\[pid=[^\]]+\]Reply\[/pid\]', '', text)
+
+    # === 3-4. [@]name[/@] → @name / [uid=xxx]name[/uid] → @name ===
+    text = re.sub(r'\[@\]([^\[\]]*?)\[/@\]', r'@\1', text)
+    text = re.sub(r'\[uid=\d+\]([^\[\]]*?)\[/uid\]', r'@\1', text)
+
+    # === 5. [img]...[/img] → 移除（图片已在 _extract_nga_images 中提取） ===
+    text = re.sub(r'\[img\][^\[]*?\[/img\]', '', text, flags=re.IGNORECASE)
+
+    # === 6. 内联格式：迭代转换，每次只处理不含子标签的最内层 ===
+    for _ in range(20):
+        old = text
+        text = re.sub(r'\[b\]([^\[\]]*?)\[/b\]', r'**\1**', text)
+        text = re.sub(r'\[i\]([^\[\]]*?)\[/i\]', r'*\1*', text)
+        text = re.sub(r'\[u\]([^\[\]]*?)\[/u\]', r'<u>\1</u>', text)
+        text = re.sub(r'\[del\]([^\[\]]*?)\[/del\]', r'~~\1~~', text)
+        text = re.sub(r'\[color=[^\]]+\]([^\[\]]*?)\[/color\]', r'\1', text)
+        text = re.sub(r'\[size=[^\]]+\]([^\[\]]*?)\[/size\]', r'\1', text)
+        if text == old:
+            break
+
+    # === 7. 链接 [url=xxx]text[/url] / [url]xxx[/url] ===
+    text = re.sub(
+        r'\[url=([^\]]+?)\]([^\[\]]*?)\[/url\]',
+        r'[\2](\1)', text,
+    )
+    text = re.sub(r'\[url\]([^\[\]]*?)\[/url\]', r'\1', text)
+
+    # === 8. 引用 [quote] —— 迭代处理嵌套（Markdown 只支持单层 >） ===
+    for _ in range(10):
+        old = text
+        text = re.sub(
+            r'\[quote\]([^\[\]]*?)\[/quote\]',
+            lambda m: '\n> ' + m.group(1).strip().replace('\n', '\n> ') + '\n',
+            text,
+        )
+        if text == old:
+            break
+
+    # === 9. 折叠 [collapse=title] / [collapse] ===
+    text = re.sub(
+        r'\[collapse=([^\]]+)\](.*?)\[/collapse\]',
+        r'<details><summary>\1</summary>\n\n\2\n\n</details>',
+        text, flags=re.DOTALL,
+    )
+    text = re.sub(
+        r'\[collapse\](.*?)\[/collapse\]',
+        r'<details><summary>点击展开</summary>\n\n\1\n\n</details>',
+        text, flags=re.DOTALL,
+    )
+
+    # === 10. [code] → Markdown 代码块 ===
+    text = re.sub(
+        r'\[code\](.*?)\[/code\]',
+        r'\n```\n\1\n```\n',
+        text, flags=re.DOTALL,
+    )
+
+    # === 11. [list][*]item1[*]item2[/list] → Markdown 列表 ===
+    text = re.sub(r'\[list\]\s*', '', text)
+    text = re.sub(r'\[\*\](?!\])', '- ', text)
+    text = re.sub(r'\[/list\]', '', text)
+
+    # === 12. [h1]/[h2]/[h3] → Markdown 标题 ===
+    text = re.sub(
+        r'\[h([1-3])\](.*?)\[/h\1\]',
+        lambda m: '#' * int(m.group(1)) + ' ' + m.group(2).strip(),
+        text, flags=re.DOTALL,
+    )
+
+    # === 13. 末尾"改动"编辑标记 ===
+    text = re.sub(r'\s*改动\s*$', '', text.strip())
+
+    # === 14. 残留清理：未匹配的标签碎片 ===
+    text = re.sub(r'\[/[^\]]+\]', '', text)   # 孤立结束标签 [/xxx]
+    text = re.sub(r'\[[^\]=]+(?:=[^\]]*)?\]', '', text)  # 孤立开始标签 [xxx=...]
+
+    # 压缩多余空行和空格
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    text = re.sub(r' {2,}', ' ', text)
+
+    return text.strip()
+
+
 def _parse_nga_replies(post_tables, user_map: dict, op_uid: str,
                         page_num: int = 1, start_index: int = 1,
                         skip_op_initial: bool = False) -> list[dict]:
@@ -259,6 +366,7 @@ def _parse_nga_replies(post_tables, user_map: dict, op_uid: str,
         content = re.sub(r'BBS\.NGA\.CN[\s\S]*$', '', content)
         content = re.sub(r'无法编辑/回复', '', content)
         content = _clean_text(content)
+        content = _clean_nga_bbcode(content)
 
         if content.strip():
             replies.append({
@@ -340,6 +448,7 @@ def _scrape_nga(html: str, url: str, cookie: str | None = None,
             edit_pos = pos
     op_body = op_body[:edit_pos].strip()
     op_body = _clean_text(op_body)
+    op_body = _clean_nga_bbcode(op_body)
 
     # === 热点回复 → td.comment_c_2（仅第一页） ===
     hot_replies = []
@@ -349,6 +458,7 @@ def _scrape_nga(html: str, url: str, cookie: str | None = None,
         date_match = re.search(r'(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})', text)
         hot_time = date_match.group(1) if date_match else ""
         hot_content = re.sub(r'\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s*', '', text).strip()
+        hot_content = _clean_nga_bbcode(hot_content)
         if hot_content:
             hot_replies.append({"time": hot_time, "content": hot_content})
 
@@ -425,19 +535,49 @@ def _scrape_nga(html: str, url: str, cookie: str | None = None,
     images: list[dict] = []
     seen_urls: set[str] = set()
     # OP 图片
-    for url in op_images:
-        if url not in seen_urls:
-            seen_urls.add(url)
-            images.append({"url": url, "source": "op"})
+    for img_url in op_images:
+        if img_url not in seen_urls:
+            seen_urls.add(img_url)
+            images.append({"url": img_url, "source": "op"})
     # 回复图片
     for r in all_replies:
-        for url in r.get("images", []):
-            if url not in seen_urls:
-                seen_urls.add(url)
+        for img_url in r.get("images", []):
+            if img_url not in seen_urls:
+                seen_urls.add(img_url)
                 images.append({
-                    "url": url,
+                    "url": img_url,
                     "source": f"reply_{r.get('index', '?')}",
                 })
+
+    # === 分配图片本地路径 & 嵌入 Markdown ===
+    url_to_local: dict[str, str] = {}
+    for i, img in enumerate(images, 1):
+        ext = img['url'].rsplit('.', 1)[-1].split('?')[0]
+        if ext not in ('jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'):
+            ext = 'jpg'
+        path = f"images/{i:02d}.{ext}"
+        img['path'] = path
+        url_to_local[img['url']] = path
+
+    # 嵌入 OP 图片
+    for img_url in op_images:
+        if img_url in url_to_local:
+            op_body += f"\n\n![]({url_to_local[img_url]})"
+
+    # 嵌入回复图片（仅嵌入到源回复，避免跨页重复）
+    reply_image_map: dict[int, list[str]] = {}
+    for img in images:
+        src = img['source']
+        if src.startswith('reply_'):
+            idx = int(src.split('_')[1])
+            reply_image_map.setdefault(idx, []).append(img['url'])
+
+    for r in all_replies:
+        r_idx = r.get('index')
+        if r_idx in reply_image_map:
+            for img_url in reply_image_map[r_idx]:
+                if img_url in url_to_local:
+                    r['content'] += f"\n\n![]({url_to_local[img_url]})"
 
     # === 构建输出 Markdown ===
     lines = [f"# {title}\n"]
@@ -474,6 +614,9 @@ def _scrape_nga(html: str, url: str, cookie: str | None = None,
     body = '\n'.join(lines)
     word_count = len(re.findall(r'[一-鿿]', body))
 
+    # 生成 slug
+    slug = re.sub(r'[\\/:*?"<>|\[\]]', '', title).strip()[:60]
+
     return {
         "type": "forum",
         "source": url,
@@ -487,6 +630,8 @@ def _scrape_nga(html: str, url: str, cookie: str | None = None,
         "total_pages": total_pages,
         "pages_collected": pages_to_fetch,
         "images": images,
+        "slug": slug,
+        "fetched_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
     }
 
 

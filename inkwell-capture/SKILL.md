@@ -1,11 +1,12 @@
 ---
 name: inkwell-capture
 description: >
-  Inkwell capture — 网页采集、爬虫、截图 OCR、图片分析。
-  当用户发送链接、截图、提及"采集""抓取""爬虫""归档""OCR""保存网页"时触发。
+  Inkwell 剪藏技能。采集网页文章、论坛帖子、截图 OCR 和图片分析。
+  当用户发送链接、截图、提及"采集""抓取""剪藏""归档""OCR"时触发。
+  也适用于用户分享文章要讨论、保存参考材料、或需要从网页提取内容时。
 ---
 
-# inkwell-capture
+# inkwell-capture — 剪藏
 
 接收用户提供的链接/文件，自动识别类型，调用独立脚本处理，输出归档 Markdown 到 `archived/` 目录。
 
@@ -44,7 +45,7 @@ description: >
 
 ### Step 1.5: 检查 inkwell-search
 - 检查 `.claude/skills/inkwell-search/` 是否存在
-- 已安装 → 后续去重和索引走 inkwell-search
+- 已安装 → 后续去重和索引走 thread
 - 未安装 → 跳过语义去重和索引追加，精确去重仍生效
 
 ### Step 2: 识别输入类型
@@ -71,7 +72,7 @@ description: >
 
 #### Subagent Prompt 模板
 
-将以下内容作为 subagent 的 prompt，替换 `{url}`, `{采集类型}`, `{inkwell-search 状态}` 等占位符：
+将以下内容作为 subagent 的 prompt，替换 `{url}`, `{采集类型}`, `{thread 状态}` 等占位符：
 
 ```
 你是一个内容采集 agent。请按照以下流程采集并归档内容。
@@ -80,7 +81,7 @@ description: >
 **采集类型**: {webpage / forum / image-ocr}
 **Cookie 来源**: {从 .env 读取 / 无}
 **工作目录**: /Users/xiesh/writing/web-analysis
-**inkwell-search 状态**: {已安装 / 未安装}
+**thread 状态**: {已安装 / 未安装}
 **配置**: .web-analysis.yaml → crawl_delay={delay}, comment_limit={limit}
 
 ## 可用工具
@@ -128,7 +129,7 @@ grep -rl "source: {url}" archived/
 - 匹配到 → 返回 "⚠️ 链接已于 YYYY-MM-DD 采集过 (archived/.../)。请主会话决定：覆盖 / 跳过？"
 - 未匹配 → 继续
 
-**语义去重**（仅 inkwell-search 已安装时）：
+**语义去重**（仅 thread 已安装时）：
 ```bash
 cd /Users/xiesh/writing
 conda run -n web-analysis python inkwell-skills/inkwell-search/scripts/searcher.py search --granularity doc --top-k 1 --threshold 0.95 --query "{title + summary}"
@@ -191,7 +192,7 @@ conda run -n web-analysis python .claude/skills/inkwell-capture/scripts/archiver
 
 archiver.py 自动创建 archived/YYYYMMDD/{slug}/ 目录并写入 `{slug}.md`。
 
-如果 inkwell-search 已安装，追加 FAISS 索引：
+如果 thread 已安装，追加 FAISS 索引：
 ```bash
 cd /Users/xiesh/writing
 conda run -n web-analysis python inkwell-skills/inkwell-search/scripts/indexer.py index --path "web-analysis/archived/YYYYMMDD/{slug}/{slug}.md" --text "{title + summary + tags + body 前 500 字}"
@@ -232,7 +233,7 @@ conda run -n web-analysis python inkwell-skills/inkwell-search/scripts/indexer.p
 
 Subagent 完成后，将结果展示给用户。
 
-- **成功** → 显示归档摘要，询问"要讨论这篇吗？（衔接 inkwell-write）"
+- **成功** → 显示归档摘要，询问"要讨论这篇吗？（衔接 inkwell-write Skill）"
 - **失败** → 显示错误信息和建议方案，询问是否手动处理
 - **批量采集** → 汇总所有 subagent 的结果，报告成功/失败数量
 - **去重提示** → 如果 subagent 返回了去重警告，让用户决定覆盖/跳过
@@ -243,7 +244,7 @@ Subagent 完成后，将结果展示给用户。
    🏷 {category} | {tags}
    📝 {summary}
 
-要讨论这篇吗？（衔接 inkwell-write）
+要讨论这篇吗？（衔接 inkwell-write Skill）
 ```
 
 ## 脚本接口约定
