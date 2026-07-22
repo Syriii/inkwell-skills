@@ -233,7 +233,7 @@ python inkwell-skills/inkwell-search/scripts/indexer.py index --path "web-analys
 
 Subagent 完成后，将结果展示给用户。
 
-- **成功** → 显示归档摘要，询问"要讨论这篇吗？（衔接 inkwell-write Skill）"
+- **成功** → 显示归档摘要，询问"要讨论这篇吗？（衔接 inkwell-write）"
 - **失败** → 显示错误信息和建议方案，询问是否手动处理
 - **批量采集** → 汇总所有 subagent 的结果，报告成功/失败数量
 - **去重提示** → 如果 subagent 返回了去重警告，让用户决定覆盖/跳过
@@ -244,7 +244,7 @@ Subagent 完成后，将结果展示给用户。
    🏷 {category} | {tags}
    📝 {summary}
 
-要讨论这篇吗？（衔接 inkwell-write Skill）
+要讨论这篇吗？（衔接 inkwell-write）
 ```
 
 ## 脚本接口约定
