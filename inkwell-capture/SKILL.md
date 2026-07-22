@@ -45,7 +45,7 @@ description: >
 
 ### Step 1.5: 检查 inkwell-search
 - 检查 `.claude/skills/inkwell-search/` 是否存在
-- 已安装 → 后续去重和索引走 thread
+- 已安装 → 后续去重和索引走 inkwell-search
 - 未安装 → 跳过语义去重和索引追加，精确去重仍生效
 
 ### Step 2: 识别输入类型
@@ -72,7 +72,7 @@ description: >
 
 #### Subagent Prompt 模板
 
-将以下内容作为 subagent 的 prompt，替换 `{url}`, `{采集类型}`, `{thread 状态}` 等占位符：
+将以下内容作为 subagent 的 prompt，替换 `{url}`, `{采集类型}`, `{inkwell-search 状态}` 等占位符：
 
 ```
 你是一个内容采集 agent。请按照以下流程采集并归档内容。
@@ -80,8 +80,8 @@ description: >
 **采集目标**: {url}
 **采集类型**: {webpage / forum / image-ocr}
 **Cookie 来源**: {从 .env 读取 / 无}
-**工作目录**: /Users/xiesh/writing/web-analysis
-**thread 状态**: {已安装 / 未安装}
+**工作目录**: {project_root}
+**inkwell-search 状态**: {已安装 / 未安装}
 **配置**: .web-analysis.yaml → crawl_delay={delay}, comment_limit={limit}
 
 ## 可用工具
@@ -92,21 +92,21 @@ Bash, Read, Write, Edit, Grep, Glob
 
 ### 1. 执行采集脚本
 
-根据采集类型选择脚本，在 /Users/xiesh/writing/web-analysis 目录下执行。
+根据采集类型选择脚本，在 {project_root} 目录下执行。
 
 **普通网页 (webpage)**:
 ```
-conda run -n web-analysis python .claude/skills/inkwell-capture/scripts/web_fetch.py "{url}"
+python .claude/skills/inkwell-capture/scripts/web_fetch.py "{url}"
 ```
 失败时自动降级：
 ```
-conda run -n web-analysis python .claude/skills/inkwell-capture/scripts/web_fetch_full.py "{url}"
+python .claude/skills/inkwell-capture/scripts/web_fetch_full.py "{url}"
 ```
 降级链：403/401 → 检查 .env 中的域名 Cookie，通过 --cookie 参数传入 → 仍失败则返回错误。其他错误（超时/内容为空）→ 自动降级到 web_fetch_full.py → 仍失败则返回手动方案建议。
 
 **论坛帖子 (forum)**:
 ```
-conda run -n web-analysis python .claude/skills/inkwell-capture/scripts/forum_scraper.py "{url}"
+python .claude/skills/inkwell-capture/scripts/forum_scraper.py "{url}"
 ```
 
 **截图 OCR (image-ocr)**: 使用 ocr_text.py 或直接在对话中分析图片内容。
@@ -129,10 +129,10 @@ grep -rl "source: {url}" archived/
 - 匹配到 → 返回 "⚠️ 链接已于 YYYY-MM-DD 采集过 (archived/.../)。请主会话决定：覆盖 / 跳过？"
 - 未匹配 → 继续
 
-**语义去重**（仅 thread 已安装时）：
+**语义去重**（仅 inkwell-search 已安装时）：
 ```bash
-cd /Users/xiesh/writing
-conda run -n web-analysis python inkwell-skills/inkwell-search/scripts/searcher.py search --granularity doc --top-k 1 --threshold 0.95 --query "{title + summary}"
+cd {project_root}
+python inkwell-skills/inkwell-search/scripts/searcher.py search --granularity doc --top-k 1 --threshold 0.95 --query "{title + summary}"
 ```
 - 相似度 ≥ 0.95 → 返回 "⚠️ 发现高度相似内容：[path]，相似度 {score}。请主会话决定是否仍然归档。"
 - 语义去重不阻塞归档，仅作提示
@@ -186,16 +186,16 @@ conda run -n web-analysis python inkwell-skills/inkwell-search/scripts/searcher.
 
 调用 archiver.py：
 ```bash
-cd /Users/xiesh/writing/web-analysis
-conda run -n web-analysis python .claude/skills/inkwell-capture/scripts/archiver.py --json '<json>'
+cd {project_root}
+python .claude/skills/inkwell-capture/scripts/archiver.py --json '<json>'
 ```
 
 archiver.py 自动创建 archived/YYYYMMDD/{slug}/ 目录并写入 `{slug}.md`。
 
-如果 thread 已安装，追加 FAISS 索引：
+如果 inkwell-search 已安装，追加 FAISS 索引：
 ```bash
-cd /Users/xiesh/writing
-conda run -n web-analysis python inkwell-skills/inkwell-search/scripts/indexer.py index --path "web-analysis/archived/YYYYMMDD/{slug}/{slug}.md" --text "{title + summary + tags + body 前 500 字}"
+cd {project_root}
+python inkwell-skills/inkwell-search/scripts/indexer.py index --path "web-analysis/archived/YYYYMMDD/{slug}/{slug}.md" --text "{title + summary + tags + body 前 500 字}"
 ```
 
 ### 7. 返回结果

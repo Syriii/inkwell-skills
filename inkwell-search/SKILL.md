@@ -112,6 +112,26 @@ python scripts/searcher.py compare --text-a "<text>" --text-b "<text>" [--strate
 - 首次运行时 sentence-transformers 自动下载到 `/Users/xiesh/Codes/models/`
 - 换模型：修改 config.json 或项目 `.env` 中的 `EMBEDDING_MODEL`，然后重建索引
 
+## 故障排查
+
+### 模型下载失败
+
+检查网络连接，然后手动下载模型到 `/Users/xiesh/Codes/models/`，模型名称见 `.retrieval-index/config.json` 中的 `embedding_model` 字段。
+
+### FAISS 索引损坏
+
+删除 `.retrieval-index/` 下的 `.index` 文件，然后重建索引：
+
+```
+rm .retrieval-index/*.index
+python scripts/indexer.py rebuild --data <json_file>
+```
+
+### 搜索结果为空
+
+1. 检查 `search_threshold`（默认 0.75），尝试降低阈值 → 修改 `.retrieval-index/config.json` 中的 `search_threshold`
+2. 确认索引不是空的 → `python scripts/indexer.py status` 查看文档数和块数
+
 ## 目录结构
 
 ```
