@@ -31,6 +31,10 @@ description: >
    ```
 3. 询问 Hugo/Obsidian 路径（可跳过）
 4. 检查 inkwell-search 是否已安装（可选，`ls .claude/skills/inkwell-search/`）
+5. 创建 `总览.md`（Obsidian Dataview 仪表盘）：
+   - 检查项目根目录是否存在 `总览.md`
+   - 不存在 → 从 `.claude/skills/inkwell-capture/references/dashboard-template.md` 复制到 `总览.md`
+   - 提醒用户：需要安装 Obsidian Dataview 插件，在阅读模式（`Cmd+E`）下使用
 
 ## 执行流程
 
@@ -307,5 +311,6 @@ publish:
     └── references/
         ├── frontmatter-schema.md
         ├── content-types.md
-        └── error-handling.md
+        ├── error-handling.md
+        └── dashboard-template.md
 ```
