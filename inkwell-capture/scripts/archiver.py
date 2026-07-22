@@ -51,7 +51,7 @@ def make_slug(title: str) -> str:
     has_chinese = bool(re.search(r'[一-鿿]', slug))
     if has_chinese:
         # 中文标题：直接使用，清理文件名非法字符
-        slug = re.sub(r'[\\/:*?"<>|]', '', slug)
+        slug = re.sub(r'[\\/:*?"<>|\[\]]', '', slug)
         slug = slug[:60].strip()
     else:
         # 非中文标题：提取英文单词
@@ -87,29 +87,15 @@ def download_images(images: list[dict], target_dir: Path) -> list[dict]:
     downloaded = []
     for img in images:
         url = img.get("url", "")
-        path = img.get("path", "")
 
         if not url:
             downloaded.append(img)
             continue
 
-        target_path = target_dir / Path(path).name if path else _filename_from_url(url)
-
-        if target_path.exists():
-            img["path"] = str(target_path.relative_to(target_path.parent.parent.parent))
+        # 采集脚本已预设 path（如 images/01.jpg），跳过下载
+        if img.get("path") and '/' in str(img.get("path", '')):
             downloaded.append(img)
             continue
-
-        try:
-            resp = requests.get(url, timeout=30, stream=True)
-            resp.raise_for_status()
-            target_path.write_bytes(resp.content)
-            img["path"] = f"images/{target_path.name}"
-        except Exception as e:
-            img["path"] = None
-            img["download_error"] = str(e)
-
-        downloaded.append(img)
 
     return downloaded
 
@@ -138,7 +124,13 @@ def build_frontmatter(data: dict) -> str:
     # 必填字段
     lines.append(f"source: \"{_escape(data['source'])}\"")
     lines.append(f"type: {data.get('type', 'webpage')}")
-    lines.append(f"category: {data.get('category', '未分类')}")
+    category = data.get('category', '')
+    if not category:
+        print("⚠️ 警告：category 为空，已使用默认值「未分类」", file=sys.stderr)
+        category = '未分类'
+    elif category == '未分类':
+        print("⚠️ 警告：category 为「未分类」，请确认是否需要手动分类", file=sys.stderr)
+    lines.append(f"category: {category}")
 
     # tags
     tags = data.get("tags", [])
@@ -146,6 +138,7 @@ def build_frontmatter(data: dict) -> str:
         tag_str = ', '.join(tags)
         lines.append(f"tags: [{tag_str}]")
     else:
+        print("⚠️ 警告：tags 为空，请补充标签", file=sys.stderr)
         lines.append("tags: []")
 
     # title
@@ -217,8 +210,9 @@ def archive(data: dict, project_root: Path | None = None) -> dict:
     body = data.get("body", "")
     content = f"{frontmatter}\n\n{body}\n"
 
-    # 写入 article.md
-    article_path = archive_dir / "article.md"
+    # 写入 {slug}.md
+    md_name = f"{slug}.md"
+    article_path = archive_dir / md_name
     article_path.write_text(content)
 
     # 报告

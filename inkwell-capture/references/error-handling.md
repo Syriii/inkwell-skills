@@ -46,7 +46,7 @@ forum_scraper.py
 archiver.py
   错误: JSON 格式错误 / 磁盘空间不足 / 目录权限
     ↓ 不静默失败，明确报告错误
-  部分成功: article.md 已写但图片下载失败
+  部分成功: {slug}.md 已写但图片下载失败
     ↓ 标记 images 字段中的 download_error，继续
 ```
 

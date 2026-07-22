@@ -30,7 +30,7 @@ type: discussion
 category: 科技
 tags: [AI政策, 科技法规]
 based_on:
-  - archived/20260301/eu-ai-act/article.md
+  - archived/20260301/eu-ai-act/eu-ai-act.md
 ---
 ```
 
@@ -43,7 +43,7 @@ type: summary
 category: 科技
 tags: [AI政策, 科技法规, 欧盟]
 based_on:
-  - archived/20260301/eu-ai-act/article.md
+  - archived/20260301/eu-ai-act/eu-ai-act.md
 rounds: 3
 ---
 ```

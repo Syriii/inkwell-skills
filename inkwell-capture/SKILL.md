@@ -121,9 +121,9 @@ conda run -n web-analysis python .claude/skills/inkwell-capture/scripts/forum_sc
 
 ### 3. 去重检查
 
-**精确匹配**：扫描 archived/ 中所有 article.md 的 source 字段
+**精确匹配**：扫描 archived/ 中所有 .md 文件的 source 字段
 ```bash
-grep -rl "source: {url}" archived/ --include="article.md"
+grep -rl "source: {url}" archived/
 ```
 - 匹配到 → 返回 "⚠️ 链接已于 YYYY-MM-DD 采集过 (archived/.../)。请主会话决定：覆盖 / 跳过？"
 - 未匹配 → 继续
@@ -144,18 +144,25 @@ conda run -n web-analysis python inkwell-skills/inkwell-search/scripts/searcher.
 
 ### 5. 生成理解字段
 
-基于脚本输出的 body 内容，生成：
+**category 和 tags 是必填字段，必须基于 body 内容生成，不得留空。**
 
 1. **title** — 文章标题（脚本已提取则优先使用）
-2. **category** — 粗粒度分类，扫描已有分类作为参考：
+2. **category** — 粗粒度分类。先扫描已有分类作为参考：
    ```bash
-   grep -h "^category:" archived/**/article.md topics/**/*.md 2>/dev/null | sort | uniq -c | sort -rn | head -20
+   grep -rh "^category:" archived/ topics/ 2>/dev/null | sort | uniq -c | sort -rn | head -20
    ```
-3. **tags** — 2-4字标签，3-5 个，扫描已有标签作为参考：
+   如无历史分类，从以下默认分类中选择最匹配的一个：**社会、科技、政治、经济、文化、教育、生活、娱乐、健康、体育**。
+   论坛帖子注意：脚本输出的 body 中可能包含版块名（如 NGA 帖子顶部有版块路径），优先据此推断 category。
+3. **tags** — 2-4字标签，至少 2 个，最多 5 个。先扫描已有标签作为参考：
    ```bash
-   grep -h "tags:" archived/**/article.md topics/**/*.md 2>/dev/null | tr ',' '\n' | sort | uniq -c | sort -rn | head -30
+   grep -rh "tags:" archived/ topics/ 2>/dev/null | tr ',' '\n' | sort | uniq -c | sort -rn | head -30
    ```
 4. **summary** — 1-2 句中文内容摘要
+
+**写入前校验**：调用 archiver.py 前，确认：
+- category 不为空，且不为「未分类」
+- tags 数组至少包含 2 个标签
+- 如不满足 → 重新生成，不得跳过
 
 ### 6. 写入归档
 
@@ -182,12 +189,12 @@ cd /Users/xiesh/writing/web-analysis
 conda run -n web-analysis python .claude/skills/inkwell-capture/scripts/archiver.py --json '<json>'
 ```
 
-archiver.py 自动创建 archived/YYYYMMDD/{slug}/ 目录并写入 article.md。
+archiver.py 自动创建 archived/YYYYMMDD/{slug}/ 目录并写入 `{slug}.md`。
 
 如果 inkwell-search 已安装，追加 FAISS 索引：
 ```bash
 cd /Users/xiesh/writing
-conda run -n web-analysis python inkwell-skills/inkwell-search/scripts/indexer.py index --path "web-analysis/archived/YYYYMMDD/{slug}/article.md" --text "{title + summary + tags + body 前 500 字}"
+conda run -n web-analysis python inkwell-skills/inkwell-search/scripts/indexer.py index --path "web-analysis/archived/YYYYMMDD/{slug}/{slug}.md" --text "{title + summary + tags + body 前 500 字}"
 ```
 
 ### 7. 返回结果
@@ -297,7 +304,7 @@ publish:
 {project}/
 ├── .web-analysis.yaml
 ├── archived/YYYYMMDD/{slug}/
-│   ├── article.md
+│   ├── {slug}.md
 │   └── images/
 └── .claude/skills/inkwell-capture/
     ├── SKILL.md
