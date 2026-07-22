@@ -67,7 +67,7 @@ V2EX 大部分帖子无需登录即可访问。如遇到需要登录的情况：
 
 ### 知乎 (zhihu.com)
 
-知乎回答完整内容需要登录才能查看。使用 Network 一键复制全部 Cookie 即可（推荐）。
+知乎回答完整内容需要登录才能查看。未登录时只能看到回答摘要，无法获取全文。
 
 **必需字段（如手动复制时）：**
 | 字段 | 说明 |
@@ -76,7 +76,21 @@ V2EX 大部分帖子无需登录即可访问。如遇到需要登录的情况：
 | `_xsrf` | CSRF 令牌 |
 | `q_c1` | 环境识别 |
 
+**获取步骤**：
+1. 浏览器打开 https://www.zhihu.com 并登录
+2. F12 → Application → Cookies → `zhihu.com`（或 `www.zhihu.com`）
+3. 找到 `z_c0`、`_xsrf`、`q_c1` 三个字段
+4. 拼接：`z_c0=xxx; _xsrf=yyy; q_c1=zzz`
+
 > 推荐直接用 Network 方法复制全部，不用手动挑字段。
+
+**验证是否有效**：
+```bash
+curl -s -o /dev/null -w "%{http_code}" \
+  -H "Cookie: z_c0=xxx; _xsrf=yyy; q_c1=zzz" \
+  "https://www.zhihu.com/api/v4/me"
+```
+返回 200 则有效。
 
 ### 通用 / 其他站点
 
