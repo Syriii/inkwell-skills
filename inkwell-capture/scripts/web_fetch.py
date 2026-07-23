@@ -80,10 +80,13 @@ def fetch(url: str, cookie: str | None = None, timeout: int = 30) -> dict:
         }
 
     # --- 元数据 ---
-    meta = extract_metadata(html) or {}
-    # trafilatura >= 2.0 返回 Document 对象，需要转 dict
-    if not isinstance(meta, dict):
-        meta = {k: v for k, v in meta.__dict__.items() if v}
+    meta_raw = extract_metadata(html)
+    if meta_raw is None:
+        meta = {}
+    elif isinstance(meta_raw, dict):
+        meta = meta_raw
+    else:
+        meta = meta_raw.as_dict()
 
     title = meta.get("title") or ""
     date = meta.get("date") or ""
