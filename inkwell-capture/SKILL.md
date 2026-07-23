@@ -157,9 +157,10 @@ archived/YYYYMMDD/{问题名称-slug}/
 2. 去重检查
 3. 图片下载
 4. 生成字段
-5. 调用 archiver.py 写入
-6. FAISS 索引追加
-7. 呈现结果
+5. **规范审查**（Step 5.5 清单逐项检查）
+6. 调用 archiver.py 写入
+7. FAISS 索引追加
+8. 呈现结果
 
 过程中遇到问题（评论超限、Cookie 缺失）**直接在对话中确认**，不需要 subagent 来回倒手。
 
