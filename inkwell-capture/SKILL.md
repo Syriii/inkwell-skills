@@ -284,6 +284,7 @@ domain_delays:
   xiaohongshu.com: 5
 comment_limit: 500
 forum_domains: []
+inbox_cleanup: keep_dir   # keep_dir | remove_dir — 处理完后只清文件还是删整个目录
 publish:
   hugo_root: ""
   obsidian_root: ""
@@ -294,6 +295,7 @@ publish:
 ```
 {project}/
 ├── .web-analysis.yaml
+├── inbox/                        ← 媒体文件中转入口
 ├── archived/YYYYMMDD/{slug}/
 │   ├── {slug}.md
 │   └── images/
