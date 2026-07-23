@@ -96,6 +96,12 @@ def fetch(url: str, cookie: str | None = None, timeout: int = 30) -> dict:
     # --- 图片提取 ---
     images = _extract_images(html, url)
 
+    # --- 清理 body 中的 data: URI 图片占位符 ---
+    # trafilatura include_images=True 会内联所有 img src，
+    # 包括 lazy-load 的 SVG 占位符，导致 body 中出现无法渲染的
+    # ![](data:image/svg+xml;utf8,<svg...) 引用。
+    body = re.sub(r'!\[[^\]]*\]\(data:[^)]*\)\s*\n?', '', body)
+
     # --- 字数统计 ---
     word_count = len(re.findall(r'[一-鿿]', body))  # 中文字符
 
