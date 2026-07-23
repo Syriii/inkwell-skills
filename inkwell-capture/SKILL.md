@@ -107,7 +107,7 @@ archived/YYYYMMDD/{回答标题-slug}/
 ├── comments.md                 # 该回答评论区
 └── images/                     # 该回答图片
 ```
-- `回答标题-slug` 由模型根据回答内容总结生成
+- `回答标题-slug` 由模型根据回答内容总结生成，**必须为中文**（禁止拼音/英文）
 - 作者名写入文档 frontmatter 而非目录名
 
 2. **全问题** (`/question/{id}`)：
