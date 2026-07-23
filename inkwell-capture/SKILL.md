@@ -415,7 +415,7 @@ Claude Code 补充后（阶段二）：
   "images": [{"url": "https://...", "path": "images/..."}],
   "title": "文章标题",
   "category": "科技",
-  "tags": ["AI", "政策"],
+  "tags": ["人工智能", "政策解读"],
   "summary": "一句话摘要..."
 }
 ```
