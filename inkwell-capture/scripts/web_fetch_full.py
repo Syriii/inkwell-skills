@@ -165,6 +165,9 @@ def fetch_full(url: str, cookie: str | None = None,
         seen.add(src)
         image_list.append({"url": urljoin(url, src), "path": ""})
 
+    # --- 清理 body 中的 data: URI 图片占位符 ---
+    body = re.sub(r'!\[[^\]]*\]\(data:[^)]*\)\s*\n?', '', body)
+
     word_count = len(re.findall(r'[一-鿿]', body))
 
     return {
