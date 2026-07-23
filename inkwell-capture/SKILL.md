@@ -315,3 +315,6 @@ publish:
         ├── error-handling.md
         └── dashboard-template.md
 ```
+
+> **目录日期规则**：`YYYYMMDD` 是**采集日期**（当天你什么时候存的），不是文章发布日期。文章发布日期保存在 frontmatter 的 `date` 字段。
+> 目录是你的操作日志——「哪天存了什么」，不是内容时间线。
