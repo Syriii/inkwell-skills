@@ -131,11 +131,7 @@ def fetch_full(url: str, cookie: str | None = None,
     try:
         meta_raw = extract_metadata(html)
         if meta_raw is not None:
-            if isinstance(meta_raw, dict):
-                meta = meta_raw
-            else:
-                # trafilatura >= 2.0 returns Document object
-                meta = {k: v for k, v in meta_raw.__dict__.items() if v}
+            meta = meta_raw if isinstance(meta_raw, dict) else meta_raw.as_dict()
     except Exception:
         pass
     date = meta.get("date") or ""
