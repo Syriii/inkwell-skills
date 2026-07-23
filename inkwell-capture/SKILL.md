@@ -170,7 +170,7 @@ archived/YYYYMMDD/{问题名称-slug}/
 
 #### Subagent Prompt 模板
 
-将以下内容作为 subagent 的 prompt，替换 `{url}`, `{采集类型}`, `{inkwell-search 状态}` 等占位符：
+Subagent 的完整指令见 `references/subagent-prompt.md`。使用时替换其中的 `{url}`, `{采集类型}`, `{inkwell-search 状态}` 等占位符，将完整内容作为 prompt 传入。
 
 ```
 你是一个内容采集 agent。请按照以下流程采集并归档内容。
@@ -284,7 +284,7 @@ python inkwell-skills/inkwell-search/scripts/searcher.py search --granularity do
 | 1 | **slug 语言** | 中文，禁止拼音/纯英文 | ❌ `jandan-ed-zhensuo` → ✅ `去三甲医院看ED的经历` |
 | 2 | **slug 与 title 关系** | 单篇文章 slug=title；知乎回答等复合场景可不同 | — |
 | 3 | **category** | 不为空，不为「未分类」，中文 | ❌ `lifestyle` → ✅ `生活` |
-| 4 | **tags** | 每个 2-4 中文字（英文缩写如 ED 可接受），至少 2 个 | ❌ `[health, marriage]` → ✅ `[男性健康, 婚姻]` |
+| 4 | **tags** | 中文为主，每标签 2-4 字，禁止纯英文（如 `health`）；中文内含英文缩写可接受（如 `ED就诊`） | ❌ `[health, marriage]` → ✅ `[男性健康, 婚姻]` |
 | 5 | **title** | 中文为主（英文缩写可接受），禁止纯英文 | ❌ `My ED Clinic Visit` |
 | 6 | **summary** | 1-2 句中文，禁止纯英文 | ❌ `A man visited ED clinic...` |
 | 7 | **body 图片** | 无 `data:image/` URI 引用残留 | ❌ `![](data:image/svg+xml;utf8,<svg)` |
