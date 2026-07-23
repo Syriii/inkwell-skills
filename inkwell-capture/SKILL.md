@@ -230,6 +230,7 @@ python .claude/skills/inkwell-capture/scripts/forum_scraper.py "{url}"
 
 检查脚本输出：
 - body 为空或 word_count < 50 → 尝试降级脚本
+- body 中存在 `data:` URI 图片引用（如 `![](data:image/svg+xml;utf8,<svg...)`）→ 用 regex 清除：`re.sub(r'!\[[^\]]*\]\(data:[^)]*\)\s*\n?', '', body)`。这是 lazy-load 占位符，会破坏 Markdown 渲染器。脚本已做自动清理，此检查作为兜底
 - 所有脚本都失败 → 返回错误：`❌ 采集失败：[url]` + 原因 + 手动方案建议
 - 论坛评论数 > comment_limit → 备注"评论数超阈值，已截断"
 
