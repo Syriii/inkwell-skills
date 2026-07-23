@@ -127,26 +127,17 @@ def fetch_full(url: str, cookie: str | None = None,
         }
 
     # --- 元数据 ---
+    meta = {}
     try:
-        meta_raw = extract_metadata(html, default_date=False)
-        if meta_raw is None:
-            meta = {}
-        elif isinstance(meta_raw, dict):
-            meta = meta_raw
-        else:
-            # trafilatura >= 2.0 returns Document object
-            meta = {k: v for k, v in meta_raw.__dict__.items() if v}
-    except TypeError:
-        try:
-            meta_raw = extract_metadata(html)
-            if meta_raw is None:
-                meta = {}
-            elif isinstance(meta_raw, dict):
+        meta_raw = extract_metadata(html)
+        if meta_raw is not None:
+            if isinstance(meta_raw, dict):
                 meta = meta_raw
             else:
+                # trafilatura >= 2.0 returns Document object
                 meta = {k: v for k, v in meta_raw.__dict__.items() if v}
-        except Exception:
-            meta = {}
+    except Exception:
+        pass
     date = meta.get("date") or ""
     author = meta.get("author") or ""
 
