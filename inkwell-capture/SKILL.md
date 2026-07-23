@@ -269,7 +269,7 @@ python inkwell-skills/inkwell-search/scripts/searcher.py search --granularity do
    ```
    如无历史分类，从以下默认分类中选择最匹配的一个：**社会、科技、政治、经济、文化、教育、生活、娱乐、健康、体育**。
    论坛帖子注意：脚本输出的 body 中可能包含版块名（如 NGA 帖子顶部有版块路径），优先据此推断 category。
-3. **tags** — 2-4字标签，至少 2 个，最多 5 个。先扫描已有标签作为参考：
+3. **tags** — 中文标签为主，每标签 2-4 字，至少 2 个，最多 5 个。禁止纯英文标签（如 `health`），但中文标签内含英文缩写可接受（如 `ED治疗`）。先扫描已有标签作为参考：
    ```bash
    grep -rh "tags:" archived/ topics/ 2>/dev/null | tr ',' '\n' | sort | uniq -c | sort -rn | head -30
    ```
