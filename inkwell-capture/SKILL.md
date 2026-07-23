@@ -306,7 +306,10 @@ python .claude/skills/inkwell-capture/scripts/archiver.py --json '<json>'
 
 archiver.py 自动创建 archived/YYYYMMDD/{slug}/ 目录并写入 `{slug}.md`。
 
-> **slug 语言铁律**：目录名和文件名必须使用中文。禁止拼音（如 `jandan-ed-zhensuo`）、纯英文 slug。中文内容的 slug 默认等于 title，无需额外加工（archiver.py 的 `make_slug()` 对中文标题直接取中文）。
+> **slug 语言铁律**：目录名和文件名必须使用中文。禁止拼音（如 `jandan-ed-zhensuo`）、纯英文 slug。
+> - **单篇文章/帖子**：slug 默认等于 title，无需区分
+> - **知乎回答/多段内容**：slug 可能需要概括"问题+回答"的完整语境，此时 slug 和 title 可以不同（如 title="拐卖人口罪消失三十年"，slug="拐卖人口罪消失三十年-中国刑法性别偏差全梳理"）
+> - archiver.py 的 `make_slug()` 对中文标题直接取中文，手动创建目录时同样遵循以上规则
 
 如果 inkwell-search 已安装，追加 FAISS 索引：
 ```bash
