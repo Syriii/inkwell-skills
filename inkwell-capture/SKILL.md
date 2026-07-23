@@ -274,10 +274,22 @@ python inkwell-skills/inkwell-search/scripts/searcher.py search --granularity do
    ```
 4. **summary** — 1-2 句中文内容摘要
 
-**写入前校验**：调用 archiver.py 前，确认：
-- category 不为空，且不为「未分类」
-- tags 数组至少包含 2 个标签
-- 如不满足 → 重新生成，不得跳过
+### 5.5 规范审查（写入前必须逐项通过）
+
+**调用 archiver.py 之前，逐项检查以下清单。任何一项不通过即修复，全部通过才能写入。**
+
+| # | 检查项 | 规则 | 不通过示例 |
+|---|--------|------|-----------|
+| 1 | **slug 语言** | 中文，禁止拼音/纯英文 | ❌ `jandan-ed-zhensuo` → ✅ `去三甲医院看ED的经历` |
+| 2 | **slug 与 title 关系** | 单篇文章 slug=title；知乎回答等复合场景可不同 | — |
+| 3 | **category** | 不为空，不为「未分类」，中文 | ❌ `lifestyle` → ✅ `生活` |
+| 4 | **tags** | 每个 2-4 中文字（英文缩写如 ED 可接受），至少 2 个 | ❌ `[health, marriage]` → ✅ `[男性健康, 婚姻]` |
+| 5 | **title** | 中文为主（英文缩写可接受），禁止纯英文 | ❌ `My ED Clinic Visit` |
+| 6 | **summary** | 1-2 句中文，禁止纯英文 | ❌ `A man visited ED clinic...` |
+| 7 | **body 图片** | 无 `data:image/` URI 引用残留 | ❌ `![](data:image/svg+xml;utf8,<svg)` |
+| 8 | **目录名** | 与 slug 一致，`archived/YYYYMMDD/{slug}/` | — |
+
+**此清单为阻塞项，不通过不得写入归档。**
 
 ### 6. 写入归档
 
