@@ -616,8 +616,11 @@ def _scrape_nga(html: str, url: str, cookie: str | None = None,
     body = '\n'.join(lines)
     word_count = len(re.findall(r'[一-鿿]', body))
 
-    # 生成 slug
+    # 生成 slug（中文标题直接使用，非中文标题警告）
     slug = re.sub(r'[\\/:*?"<>|\[\]]', '', title).strip()[:60]
+    has_chinese = bool(re.search(r'[一-鿿]', slug))
+    if not has_chinese:
+        print(f"⚠️  标题不含中文字符，slug 可能不可读: '{slug}'", file=sys.stderr)
 
     return {
         "type": "forum",

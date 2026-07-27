@@ -54,58 +54,58 @@ def fetch_full(url: str, cookie: str | None = None,
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        context = browser.new_context(
-            user_agent=(
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/126.0.0.0 Safari/537.36"
-            ),
-            locale="zh-CN",
-        )
-
-        if cookie:
-            # cookie 格式: "name1=value1; name2=value2"
-            cookies = []
-            for pair in cookie.split(";"):
-                pair = pair.strip()
-                if "=" in pair:
-                    name, value = pair.split("=", 1)
-                    cookies.append({
-                        "name": name.strip(),
-                        "value": value.strip(),
-                        "domain": _extract_domain(url),
-                        "path": "/",
-                    })
-            context.add_cookies(cookies)
-
-        page = context.new_page()
-
         try:
-            page.goto(url, wait_until="domcontentloaded", timeout=timeout * 1000)
-            # 等待额外时间让动态内容加载
-            page.wait_for_timeout(wait_ms)
+            context = browser.new_context(
+                user_agent=(
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/126.0.0.0 Safari/537.36"
+                ),
+                locale="zh-CN",
+            )
 
-            html = page.content()
-            title = page.title()
+            if cookie:
+                # cookie 格式: "name1=value1; name2=value2"
+                cookies = []
+                for pair in cookie.split(";"):
+                    pair = pair.strip()
+                    if "=" in pair:
+                        name, value = pair.split("=", 1)
+                        cookies.append({
+                            "name": name.strip(),
+                            "value": value.strip(),
+                            "domain": _extract_domain(url),
+                            "path": "/",
+                        })
+                context.add_cookies(cookies)
 
-            # 提取所有图片
-            images = page.evaluate("""() => {
-                return Array.from(document.querySelectorAll('img[src]'))
-                    .map(img => img.src)
-                    .filter(src => !src.startsWith('data:'))
-                    .slice(0, 30);
-            }""")
+            page = context.new_page()
 
-        except Exception as e:
+            try:
+                page.goto(url, wait_until="domcontentloaded", timeout=timeout * 1000)
+                # 等待额外时间让动态内容加载
+                page.wait_for_timeout(wait_ms)
+
+                html = page.content()
+                title = page.title()
+
+                # 提取所有图片
+                images = page.evaluate("""() => {
+                    return Array.from(document.querySelectorAll('img[src]'))
+                        .map(img => img.src)
+                        .filter(src => !src.startsWith('data:'))
+                        .slice(0, 30);
+                }""")
+
+            except Exception as e:
+                return {
+                    "error": "playwright_navigation_failed",
+                    "message": str(e),
+                    "type": "webpage",
+                    "source": url,
+                }
+        finally:
             browser.close()
-            return {
-                "error": "playwright_navigation_failed",
-                "message": str(e),
-                "type": "webpage",
-                "source": url,
-            }
-
-        browser.close()
 
     # --- 正文提取 ---
     body = trafilatura.extract(
