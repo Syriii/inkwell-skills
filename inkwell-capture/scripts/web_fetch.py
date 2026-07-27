@@ -166,6 +166,8 @@ def _extract_images(html: str, base_url: str) -> list[dict]:
             continue
         seen.add(full_url)
         result.append({"url": full_url, "path": ""})
+    if len(imgs) > 30:
+        print(f"⚠️  图片数量 ({len(imgs)}) 超过上限 (30)，已截断。", file=sys.stderr)
     return result
 
 
