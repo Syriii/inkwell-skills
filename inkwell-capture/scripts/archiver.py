@@ -202,9 +202,6 @@ def build_frontmatter(data: dict) -> str:
     return '\n'.join(lines)
 
 
-def escape_yaml(s: str) -> str:
-    """转义 YAML 字符串中的双引号。"""
-    return s.replace('\\', '\\\\').replace('"', '\\"')
 
 
 # ---------------------------------------------------------------------------
