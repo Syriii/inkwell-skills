@@ -502,6 +502,7 @@ def _scrape_nga(html: str, url: str, cookie: str | None = None,
     # === 采集后续页面 ===
     tid = _extract_tid_from_url(url)
     crawl_delay = 3  # 默认 3 秒，与 .web-analysis.yaml 一致
+    failed_pages = []  # 记录采集失败的页码
 
     for page_num in range(2, pages_to_fetch + 1):
         try:
@@ -528,6 +529,7 @@ def _scrape_nga(html: str, url: str, cookie: str | None = None,
                 time.sleep(crawl_delay)
 
         except Exception as e:
+            failed_pages.append({"page": page_num, "error": str(e)})
             print(f"  ⚠️  第 {page_num} 页采集失败: {e}", file=sys.stderr)
             continue
 
