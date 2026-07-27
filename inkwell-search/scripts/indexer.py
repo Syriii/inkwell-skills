@@ -85,6 +85,8 @@ def chunk_by_length(text: str, max_len: int = CHUNK_MAX,
     while start < len(text):
         end = min(start + chunk_size, len(text))
         chunks.append(text[start:end])
+        if end >= len(text):
+            break
         start = end - overlap
     return chunks
 
