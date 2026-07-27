@@ -204,11 +204,12 @@ archived/YYYYMMDD/{问题名称-slug}/
 主会话直接执行：
 
 1. 运行采集脚本（web_fetch.py / web_fetch_full.py / forum_scraper.py）
+   或通过 MCP 浏览器提取数据
 2. 去重检查
 3. 图片下载
-4. 生成字段
-5. **规范审查**（Step 5.5 清单逐项检查）
-6. 调用 archiver.py 写入
+4. 生成字段（title, slug, category, tags, summary）
+5. **[硬门禁] 规范审查** — 必须逐项通过 Step 5.5 清单，不通过不写入。**所有采集路径（脚本/MCP浏览器/subagent）无一例外**
+6. 写入归档文件（archiver.py 或直接写 Markdown）
 7. FAISS 索引追加
 8. 呈现结果
 
