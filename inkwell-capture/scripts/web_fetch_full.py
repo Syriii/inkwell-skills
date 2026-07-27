@@ -76,7 +76,7 @@ def fetch_full(url: str, cookie: str | None = None,
                         cookies.append({
                             "name": name.strip(),
                             "value": value.strip(),
-                            "domain": _extract_domain(url),
+                            "domain": extract_domain(url),
                             "path": "/",
                         })
                 context.add_cookies(cookies)
@@ -144,7 +144,7 @@ def fetch_full(url: str, cookie: str | None = None,
 
     if date:
         try:
-            date = _normalize_date(date)
+            date = normalize_date(date)
         except Exception:
             pass
 
