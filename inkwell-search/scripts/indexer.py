@@ -262,7 +262,7 @@ def op_index(path: str, text: str) -> dict:
 
     # 分块 + 编码块级向量（归一化）
     chunks = chunk_document(text)
-    chunk_vecs = normalize(model.encode(chunks).astype(np.float32)) if chunks else np.empty((0, 384), dtype=np.float32)
+    chunk_vecs = normalize(model.encode(chunks).astype(np.float32)) if chunks else np.empty((0, model.get_embedding_dimension()), dtype=np.float32)
 
     dim = doc_vec.shape[0]
 
