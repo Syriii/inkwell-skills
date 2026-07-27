@@ -96,7 +96,7 @@ def fetch(url: str, cookie: str | None = None, timeout: int = 30) -> dict:
     # 日期标准化
     if date:
         try:
-            date = _normalize_date(date)
+            date = normalize_date(date)
         except Exception:
             pass
 
@@ -117,7 +117,7 @@ def fetch(url: str, cookie: str | None = None, timeout: int = 30) -> dict:
         "source": url,
         "date": date,
         "author": author,
-        "title": title or _extract_title_from_body(body),
+        "title": title or extract_title_from_body(body),
         "body": body.strip() if body else "",
         "word_count": word_count,
         "images": images,
