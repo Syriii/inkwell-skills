@@ -138,6 +138,16 @@ description: >
 
 `/answer/{id}` 会自动重定向到 `/question/{qid}/answer/{aid}`，问题上下文永远可用。
 
+**反爬策略**：知乎对自动化请求有严格反爬检测。
+
+| 层级 | 方式 | 结果 |
+|------|------|------|
+| L1 | `web_fetch.py` (requests + trafilatura) | 403，反爬拦截 |
+| L2 | `web_fetch_full.py` (Playwright + Cookie) | 40362 错误码，异常访问限制 |
+| L3 | **MCP 浏览器** (真实 Chrome + 已登录 session) | ✅ 正常访问，可滚动加载 |
+
+> 知乎采集需走 **MCP 浏览器 L3**。使用 `browser_navigate` 打开链接，`browser_evaluate` 滚动加载更多内容，再 `browser_evaluate` 提取回答数据。
+
 **目录结构模板**：
 
 1. **单回答** (`/answer/{id}`)：
