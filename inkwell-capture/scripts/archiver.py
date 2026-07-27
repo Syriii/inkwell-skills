@@ -31,6 +31,10 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
+# 确保脚本目录在 import 路径中
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from utils import escape_yaml  # noqa: E402
+
 # ---------------------------------------------------------------------------
 # Slug 生成
 # ---------------------------------------------------------------------------
@@ -153,7 +157,7 @@ def build_frontmatter(data: dict) -> str:
     lines.append(f"date: {date}")
 
     # 必填字段
-    lines.append(f"source: \"{_escape(data['source'])}\"")
+    lines.append(f"source: \"{escape_yaml(data['source'])}\"")
     lines.append(f"type: {data.get('type', 'webpage')}")
     category = data.get('category', '')
     if not category:
@@ -173,16 +177,16 @@ def build_frontmatter(data: dict) -> str:
         lines.append("tags: []")
 
     # title
-    lines.append(f"title: \"{_escape(data.get('title', ''))}\"")
+    lines.append(f"title: \"{escape_yaml(data.get('title', ''))}\"")
 
     # summary
     summary = data.get("summary", "")
     if summary:
-        lines.append(f"summary: \"{_escape(summary)}\"")
+        lines.append(f"summary: \"{escape_yaml(summary)}\"")
 
     # 可选字段
     if data.get("author"):
-        lines.append(f"author: \"{_escape(data['author'])}\"")
+        lines.append(f"author: \"{escape_yaml(data['author'])}\"")
     if data.get("word_count"):
         lines.append(f"word_count: {data['word_count']}")
 
@@ -198,7 +202,7 @@ def build_frontmatter(data: dict) -> str:
     return '\n'.join(lines)
 
 
-def _escape(s: str) -> str:
+def escape_yaml(s: str) -> str:
     """转义 YAML 字符串中的双引号。"""
     return s.replace('\\', '\\\\').replace('"', '\\"')
 
