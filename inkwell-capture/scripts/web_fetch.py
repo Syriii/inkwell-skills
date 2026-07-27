@@ -17,9 +17,7 @@ import json
 import os
 import re
 import sys
-import time
-from datetime import datetime
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 import requests
 import trafilatura
@@ -122,34 +120,6 @@ def fetch(url: str, cookie: str | None = None, timeout: int = 30) -> dict:
         "word_count": word_count,
         "images": images,
     }
-
-
-def _normalize_date(s: str) -> str:
-    """尝试标准化日期格式 → YYYY-MM-DD。"""
-    # 已标准
-    if re.match(r'^\d{4}-\d{2}-\d{2}$', s):
-        return s
-
-    # 常见格式
-    for fmt in [
-        "%Y-%m-%dT%H:%M:%S",
-        "%Y-%m-%d %H:%M:%S",
-        "%Y年%m月%d日",
-        "%B %d, %Y",
-        "%d %B %Y",
-    ]:
-        try:
-            return datetime.strptime(s, fmt).strftime("%Y-%m-%d")
-        except ValueError:
-            continue
-
-    return s
-
-
-def _extract_title_from_body(body: str) -> str:
-    """从 Markdown body 中提取第一个 # 标题作为 title 兜底。"""
-    m = re.search(r'^#\s+(.+)$', body, re.MULTILINE)
-    return m.group(1).strip() if m else ""
 
 
 def _extract_images(html: str, base_url: str) -> list[dict]:

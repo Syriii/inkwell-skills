@@ -15,6 +15,7 @@
 
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -53,9 +54,12 @@ def ocr_image(image_path: str, lang: str = "ch") -> dict:
         "error": "no_ocr_engine",
         "message": (
             "没有可用的 OCR 引擎。安装方案：\n"
-            "  - Tesseract（推荐，轻量）: brew install tesseract tesseract-lang\n"
+            "  - Tesseract（推荐，轻量）:\n"
+            "    macOS:  brew install tesseract tesseract-lang\n"
+            "    Ubuntu: sudo apt install tesseract-ocr tesseract-ocr-chi-sim\n"
+            "    然后:   pip install pytesseract Pillow\n"
             "  - PaddleOCR（更高精度）: pip install paddlepaddle paddleocr\n"
-            "安装完成后重新运行。"
+            "详见 scripts/requirements.txt"
         ),
         "type": "screenshot_ocr",
         "source": str(path),
@@ -121,7 +125,7 @@ def _ocr_tesseract(path: Path, lang: str) -> dict | None:
     """
     try:
         import pytesseract
-        from PIL import Image, ImageFilter
+        from PIL import Image
     except ImportError:
         return None  # tesseract / PIL 不可用
 
@@ -153,24 +157,24 @@ def _ocr_tesseract(path: Path, lang: str) -> dict | None:
         try:
             text = pytesseract.image_to_string(img, lang='chi_sim')
             candidates.append(('chi_sim', text))
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"⚠️  Tesseract chi_sim 识别失败: {e}", file=sys.stderr)
 
     # 配置 2: 中英混合 + 自动页面分割
     if lang == "ch":
         try:
             text = pytesseract.image_to_string(img, lang='chi_sim+eng')
             candidates.append(('chi_sim+eng', text))
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"⚠️  Tesseract chi_sim+eng 识别失败: {e}", file=sys.stderr)
 
     # 配置 3: 纯英文
     if lang == "en" or lang == "ch":
         try:
             text = pytesseract.image_to_string(img, lang='eng')
             candidates.append(('eng', text))
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"⚠️  Tesseract eng 识别失败: {e}", file=sys.stderr)
 
     if not candidates:
         return {
@@ -212,8 +216,9 @@ def _score_ocr_result(text: str, lang: str, original_size: tuple) -> float:
 
     if lang == "ch":
         # 中文优先：中文多加分，英文多扣分
-        ascii_ratio = ascii_chars / total_chars if total_chars > 0 else 0
-        chinese_ratio = chinese_chars / total_chars if total_chars > 0 else 0
+        # total_chars > 0 已在上面保证，无需除零保护
+        ascii_ratio = ascii_chars / total_chars
+        chinese_ratio = chinese_chars / total_chars
         return chinese_chars * (1.0 - ascii_ratio * 0.8) + chinese_ratio * 10
     else:
         return total_chars
@@ -277,9 +282,15 @@ def _compute_perplexity(text: str) -> float | None:
     except ImportError:
         return None
 
+    # 模型目录：优先环境变量 WEB_ANALYSIS_MODELS_DIR → ~/.web-analysis/models/
+    # 详见项目 CLAUDE.md 的 Key Paths 说明
+    models_dir = os.environ.get(
+        "WEB_ANALYSIS_MODELS_DIR",
+        str(Path.home() / ".web-analysis" / "models"),
+    )
     model_paths = [
-        Path("/Users/xiesh/Codes/models/ocr/kenlm/zh.binary"),
-        Path("/Users/xiesh/Codes/models/ocr/kenlm/zh.arpa"),
+        Path(models_dir) / "ocr/kenlm/zh.binary",
+        Path(models_dir) / "ocr/kenlm/zh.arpa",
     ]
     model_path = None
     for mp in model_paths:

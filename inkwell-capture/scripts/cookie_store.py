@@ -11,11 +11,24 @@
 """
 
 import os
+import time
 from pathlib import Path
 from urllib.parse import urlparse
 
 # ---------------------------------------------------------------------------
+# 缓存（避免每次调用都重新读取 .env 文件）
+# ---------------------------------------------------------------------------
+
+_cache: dict[str, str] | None = None
+_cache_time: float = 0.0
+_CACHE_TTL = 30.0  # 30 秒内复用缓存
+
+# ---------------------------------------------------------------------------
 # 域名 → 环境变量名 映射表（新增站点在此注册）
+#
+# ⚠️ 顺序重要：精确域名必须排在泛域名之前。
+#    匹配逻辑用 endswith() + break on first match，
+#    如 bbs.nga.cn 必须在 nga.cn 之前，否则会被泛域名吞掉。
 # ---------------------------------------------------------------------------
 
 DOMAIN_COOKIE_MAP = {
@@ -36,7 +49,13 @@ DOMAIN_COOKIE_MAP = {
 # ---------------------------------------------------------------------------
 
 def _read_env_file() -> dict[str, str]:
-    """从项目根目录的 .env 文件读取所有变量。"""
+    """从项目根目录的 .env 文件读取所有变量（带缓存）。"""
+    global _cache, _cache_time
+
+    now = time.time()
+    if _cache is not None and (now - _cache_time) < _CACHE_TTL:
+        return _cache
+
     env = {}
     for base in [Path.cwd(), Path.cwd().parent, Path(__file__).resolve().parent.parent.parent]:
         env_file = base / ".env"
@@ -54,6 +73,9 @@ def _read_env_file() -> dict[str, str]:
                             env[key] = value
             except Exception:
                 pass
+
+    _cache = env
+    _cache_time = now
     return env
 
 
@@ -65,6 +87,9 @@ def get_cookie_for_url(url: str) -> str | None:
     Returns:
         Cookie 字符串，或 None（未配置）
     """
+    # 缺 scheme 的 URL 自动补全 https://
+    if "://" not in url:
+        url = "https://" + url
     domain = urlparse(url).netloc.lower().replace("www.", "")
 
     # 查找映射

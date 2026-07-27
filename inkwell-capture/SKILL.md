@@ -32,9 +32,17 @@ description: >
      hugo_root: ""
      obsidian_root: ""
    ```
-3. 询问 Hugo/Obsidian 路径（可跳过）
-4. 检查 inkwell-search 是否已安装（可选，`ls .claude/skills/inkwell-search/`）
-5. 创建 `总览.md`（Obsidian Dataview 仪表盘）：
+3. **检查 Python 依赖**：
+   - 读取 `scripts/requirements.txt`，对比已安装的包
+   - 缺少核心依赖时提示用户：
+     ```
+     pip install -r .claude/skills/inkwell-capture/scripts/requirements.txt
+     ```
+   - OCR 依赖（Pillow、pytesseract）为可选，需要时才提示安装
+   - 遵循**安装铁律**：任何 pip/brew/apt 命令执行前必须征得用户同意
+4. 询问 Hugo/Obsidian 路径（可跳过）
+5. 检查 inkwell-search 是否已安装（可选，`ls .claude/skills/inkwell-search/`）
+6. 创建 `总览.md`（Obsidian Dataview 仪表盘）：
    - 检查项目根目录是否存在 `总览.md`
    - 不存在 → 从 `.claude/skills/inkwell-capture/references/dashboard-template.md` 复制到 `总览.md`
    - 提醒用户：需要安装 Obsidian Dataview 插件，在阅读模式（`Cmd+E`）下使用

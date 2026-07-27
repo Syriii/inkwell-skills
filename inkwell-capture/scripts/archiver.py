@@ -25,7 +25,6 @@ import argparse
 import json
 import os
 import re
-import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -220,6 +219,13 @@ def archive(data: dict, project_root: Path | None = None) -> dict:
     """
     root = project_root or Path.cwd()
 
+    # 校验必填字段
+    required = ["source", "body", "title"]
+    for field in required:
+        if field not in data or not data[field]:
+            return {"error": "missing_required_field",
+                    "message": f"缺少必填字段: {field}"}
+
     # 确定日期和 slug
     fetched_at = data.get("fetched_at") or datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     date_str = fetched_at[:10].replace('-', '')
@@ -246,8 +252,17 @@ def archive(data: dict, project_root: Path | None = None) -> dict:
     md_name = f"{slug}.md"
     article_path = archive_dir / md_name
     tmp_path = archive_dir / f".{md_name}.tmp"
-    tmp_path.write_text(content)
-    tmp_path.replace(article_path)  # os.replace = 同文件系统原子操作
+    try:
+        tmp_path.write_text(content)
+        tmp_path.replace(article_path)  # os.replace = 同文件系统原子操作
+    except OSError:
+        # 跨文件系统 fallback：非原子但不会丢数据
+        import shutil
+        shutil.move(str(tmp_path), str(article_path))
+    finally:
+        # 清理可能残留的 .tmp 文件（如 write_text 成功但 replace 失败）
+        if tmp_path.exists():
+            tmp_path.unlink(missing_ok=True)
 
     # 报告
     rel_path = str(archive_dir.relative_to(root))

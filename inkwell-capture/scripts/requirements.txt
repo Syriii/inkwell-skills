@@ -1,17 +1,36 @@
-# 采集 Skill 依赖
+# Inkwell Capture — Python 依赖
+#
+# 最小安装（L1 网页抓取 + 论坛 + 归档）：
+#   pip install -r requirements.txt
+#
+# 全量安装（含 OCR + JS 渲染）：
+#   pip install -r requirements.txt
+#   pip install paddlepaddle paddleocr    # OCR（较大，按需）
+#   playwright install chromium           # JS 渲染浏览器
+#
+# 系统依赖（OCR 文字识别）：
+#   macOS:   brew install tesseract tesseract-lang
+#   Ubuntu:  sudo apt install tesseract-ocr tesseract-ocr-chi-sim
+#
+# Python 版本要求：>= 3.10
 
+# --- 核心依赖 ---
 trafilatura>=2.0       # L1 正文提取
 requests>=2.28         # HTTP 请求
 beautifulsoup4>=4.12   # HTML 解析（论坛抓取）
 lxml>=5.0              # BS4 解析器
 
-# L2 Playwright（可选，JS 渲染页面需要）
-playwright>=1.40
+# --- OCR 文字识别（可选，截图文字识别需要） ---
+Pillow>=10.0           # 图片预处理（RGBA→RGB、缩放）
+pytesseract>=0.3       # Tesseract Python 包装（需先安装系统 tesseract）
 
-# OCR（可选，截图文字识别需要）
-# paddlepaddle>=3.0    # PaddlePaddle 框架（较大，按需安装）
+# --- JS 渲染（可选，SPA 页面需要） ---
+playwright>=1.40       # headless Chromium 自动化
+
+# --- OCR 增强（可选，更高质量） ---
+# paddlepaddle>=3.0    # PaddlePaddle 框架（较大）
 # paddleocr>=2.7       # PaddleOCR 模型
 
-# OCR 质量评估（可选）
-# https://github.com/kpu/kenlm
-# kenlm                 # KenLM（需从源码编译或 pip install kenlm）
+# --- OCR 质量评估（可选，需额外配置模型文件） ---
+# kenlm                # KenLM（需从源码编译或 pip install kenlm）
+#                      # 模型文件放入 $WEB_ANALYSIS_MODELS_DIR/ocr/kenlm/

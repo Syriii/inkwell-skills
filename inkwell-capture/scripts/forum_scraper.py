@@ -29,17 +29,25 @@ import trafilatura
 # 确保脚本目录在 import 路径中（用于 utils / forum / cookie_store）
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from cookie_store import get_cookie_for_url  # noqa: E402
 from forum import FORUM_HANDLERS  # noqa: E402
-from utils import build_forum_body, clean_text, fetch_html  # noqa: E402
+
+try:
+    from cookie_store import get_cookie_for_url  # noqa: E402
+except ImportError:
+    def get_cookie_for_url(url: str) -> None:  # noqa: E402
+        return None
+from utils import clean_text, fetch_html  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
 # 论坛识别
 # ---------------------------------------------------------------------------
 
-def detect_forum(url: str) -> str | None:
-    """根据域名识别论坛类型，返回处理器函数名。"""
+from typing import Callable
+
+
+def detect_forum(url: str) -> Callable | None:
+    """根据域名识别论坛类型，返回对应的处理器函数。"""
     domain = urlparse(url).netloc.lower().replace("www.", "")
     for key, handler in FORUM_HANDLERS.items():
         if domain == key or domain.endswith("." + key):
@@ -52,7 +60,12 @@ def detect_forum(url: str) -> str | None:
 # ---------------------------------------------------------------------------
 
 def _scrape_generic(html: str, url: str) -> dict:
-    """通用论坛抓取——用 trafilatura 提取正文 + 常见选择器提取评论。"""
+    """通用论坛抓取——用 trafilatura 提取正文 + 常见选择器提取评论。
+
+    注意：与 NGA/V2EX/Tieba 不同，通用抓取不调用 build_forum_body() 构建格式化
+    Markdown。因为不知道论坛结构，body 字段保留 trafilatura 原文输出，
+    这与其他 handler 的「OP blockquote + 评论 thread」格式不同。这是设计取舍，不是 bug。
+    """
     from bs4 import BeautifulSoup
 
     body = trafilatura.extract(html, output_format="markdown", with_metadata=True)
