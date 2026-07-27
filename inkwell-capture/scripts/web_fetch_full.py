@@ -174,23 +174,6 @@ def fetch_full(url: str, cookie: str | None = None,
     }
 
 
-def _normalize_date(s: str) -> str:
-    if re.match(r'^\d{4}-\d{2}-\d{2}$', s):
-        return s
-    for fmt in ["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y年%m月%d日"]:
-        try:
-            return datetime.strptime(s, fmt).strftime("%Y-%m-%d")
-        except ValueError:
-            continue
-    return s
-
-
-def _extract_domain(url: str) -> str:
-    from urllib.parse import urlparse
-    parsed = urlparse(url)
-    return parsed.hostname or ""
-
-
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
