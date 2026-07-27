@@ -208,7 +208,7 @@ archived/YYYYMMDD/{问题名称-slug}/
 2. 去重检查
 3. 图片下载
 4. 生成字段（title, slug, category, tags, summary）
-5. **[硬门禁] 规范审查** — 必须逐项通过 Step 5.5 清单，不通过不写入。**所有采集路径（脚本/MCP浏览器/subagent）无一例外**
+5. **[硬门禁] 规范审查** — 必须逐项通过 Step 4 清单，不通过不写入。**所有采集路径（脚本/MCP浏览器/subagent）无一例外**
 6. 写入归档文件（archiver.py 或直接写 Markdown）
 7. FAISS 索引追加
 8. 呈现结果
