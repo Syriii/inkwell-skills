@@ -49,7 +49,11 @@ def parse_nga_user_map(html: str, existing: dict | None = None) -> dict:
 def extract_nga_total_pages(html: str) -> int:
     """从 NGA 页面提取总页数。返回至少 1。"""
     # 方法 1: __PAGE JS 变量
-    m = re.search(r'__PAGE\s*=\s*\{[^}]*?(?:totalPages|total|pages)\s*[:=]\s*(\d+)', html)
+    # NGA 格式: __PAGE = {0:'url',1:总页数,2:当前页,3:每页帖数}
+    # 先匹配数字键格式 1:N，再匹配命名键格式 totalPages:N
+    m = re.search(r'__PAGE\s*=\s*\{[^}]*?[,{]1\s*:\s*(\d+)', html)
+    if not m:
+        m = re.search(r'__PAGE\s*=\s*\{[^}]*?(?:totalPages|total|pages)\s*[:=]\s*(\d+)', html)
     if m:
         return int(m.group(1))
     # 方法 2: "共 N 页"
