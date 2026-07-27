@@ -78,7 +78,7 @@ def make_slug(title: str) -> str:
 def download_images(images: list[dict], target_dir: Path) -> list[dict]:
     """下载图片到目标目录，返回更新后的 images 列表。
 
-    跳过已存在的文件，下载失败的标记为 failed。
+    已存在文件跳过，下载失败的标记为 failed。
     """
     import requests
 
@@ -87,15 +87,46 @@ def download_images(images: list[dict], target_dir: Path) -> list[dict]:
     downloaded = []
     for img in images:
         url = img.get("url", "")
-
         if not url:
             downloaded.append(img)
             continue
 
-        # 采集脚本已预设 path（如 images/01.jpg），跳过下载
-        if img.get("path") and '/' in str(img.get("path", '')):
-            downloaded.append(img)
-            continue
+        # 已有本地路径且文件已存在 → 跳过
+        existing_path = img.get("path", "")
+        if existing_path:
+            full_path = target_dir.parent / existing_path
+            if full_path.exists():
+                downloaded.append(img)
+                continue
+
+        # 确定文件名和路径
+        filename = _filename_from_url(url)
+        dest = target_dir / filename
+
+        # 避免重名
+        counter = 1
+        stem, ext = os.path.splitext(filename)
+        while dest.exists():
+            dest = target_dir / f"{stem}_{counter}{ext}"
+            counter += 1
+
+        # 下载
+        try:
+            r = requests.get(url, headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+                ),
+                "Referer": url,
+            }, timeout=30)
+            r.raise_for_status()
+            dest.write_bytes(r.content)
+            img["path"] = f"images/{dest.name}"
+        except Exception as e:
+            img["path"] = ""
+            img["download_error"] = str(e)
+
+        downloaded.append(img)
 
     return downloaded
 
