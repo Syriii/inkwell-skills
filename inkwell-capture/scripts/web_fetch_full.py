@@ -53,8 +53,9 @@ def fetch_full(url: str, cookie: str | None = None,
         }
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = None
         try:
+            browser = p.chromium.launch(headless=True)
             context = browser.new_context(
                 user_agent=(
                     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -105,7 +106,8 @@ def fetch_full(url: str, cookie: str | None = None,
                     "source": url,
                 }
         finally:
-            browser.close()
+            if browser:
+                browser.close()
 
     # --- 正文提取 ---
     body = trafilatura.extract(
