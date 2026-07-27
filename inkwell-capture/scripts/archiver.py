@@ -241,10 +241,12 @@ def archive(data: dict, project_root: Path | None = None) -> dict:
     body = data.get("body", "")
     content = f"{frontmatter}\n\n{body}\n"
 
-    # 写入 {slug}.md
+    # 写入 {slug}.md（原子写入：先写临时文件，再 rename，防止中途崩溃损坏文件）
     md_name = f"{slug}.md"
     article_path = archive_dir / md_name
-    article_path.write_text(content)
+    tmp_path = archive_dir / f".{md_name}.tmp"
+    tmp_path.write_text(content)
+    tmp_path.replace(article_path)  # os.replace = 同文件系统原子操作
 
     # 报告
     rel_path = str(archive_dir.relative_to(root))

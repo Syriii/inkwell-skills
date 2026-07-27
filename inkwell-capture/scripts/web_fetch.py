@@ -28,6 +28,7 @@ from trafilatura.metadata import extract_metadata
 # 自动读取 .env 中保存的 Cookie（当前脚本目录）
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from cookie_store import get_cookie_for_url  # noqa: E402
+from utils import extract_title_from_body, normalize_date  # noqa: E402
 
 
 def fetch(url: str, cookie: str | None = None, timeout: int = 30) -> dict:
