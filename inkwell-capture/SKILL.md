@@ -71,7 +71,9 @@ description: >
 
 ### inbox 入口（媒体文件中转）
 
-当用户要处理图片、视频等媒体文件，但没有给出具体路径时，使用 `inbox/` 目录作为统一入口。处理完毕后根据配置决定清理策略。
+当用户要处理图片、视频等媒体文件，但没有给出具体路径时，使用 `inbox/` 目录作为统一入口。
+
+> **数据安全铁律**：inbox 中的源文件是用户的原始数据。归档未完成、源文件未确认保存到 `archived/` 之前，**绝对禁止**清理 inbox。丢失用户数据是不可接受的。
 
 1. **确保 inbox 存在**：检查项目根目录是否有 `inbox/`，没有则创建
 2. **告知用户**：「把文件放到 `inbox/` 目录，放好后告诉我。」**阻塞等待**用户确认
@@ -81,10 +83,18 @@ description: >
    - 视频 → `Read` 工具逐帧分析（Claude 只能处理视频的关键帧，如需完整逐帧分析需用户提前用 ffmpeg 拆帧）
    - 混合时按文件类型自动匹配处理方式
 5. **汇总结果**：呈现分析结果，询问是否需要归档为 Markdown
-6. **归档（可选）**：调用 archiver.py 写入 `archived/YYYYMMDD/{slug}/`
-7. **清理**：根据 `.web-analysis.yaml` 中 `inbox_cleanup` 配置：
+6. **归档（可选）**：如果用户要保存分析结果：
+   - 写入 Markdown 到 `archived/YYYYMMDD/{slug}/{slug}.md`
+   - **将 inbox 中的源文件复制到** `archived/YYYYMMDD/{slug}/images/`（而非移动——源文件仍需保留在 inbox 直到验证完成）
+   - 确认 `archived/YYYYMMDD/{slug}/images/` 中文件完整且可读
+7. **验证归档完整性**：确认以下条件全部满足后，才能进入清理步骤：
+   - `archived/YYYYMMDD/{slug}/{slug}.md` 存在且内容完整
+   - 源文件已复制到 `archived/YYYYMMDD/{slug}/images/`，数量、大小与 inbox 一致
+   - 不满足时立即报告用户，**禁止继续**，**禁止清理 inbox**
+8. **清理**：验证通过后，根据 `.web-analysis.yaml` 中 `inbox_cleanup` 配置：
    - `keep_dir`（默认）：`rm inbox/*` 只清文件，保留目录
    - `remove_dir`：`rm -rf inbox/` 删除整个目录
+9. **不复盘档案**：如果用户选择不归档，询问是否仍要清理 inbox 中的源文件，**阻塞等待**用户确认后才能清理
 
 后续新增媒体类型（PDF、音频等）也统一走 inbox 入口，无需修改流程。
 
