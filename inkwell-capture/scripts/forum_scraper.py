@@ -813,7 +813,10 @@ def _scrape_generic(html: str, url: str) -> dict:
 
     comments = []
     for sel in [".post", ".comment", ".reply", "[class*='post-']", "article"]:
-        for el in soup.select(sel)[:50]:
+        elements = soup.select(sel)
+        if len(elements) > 50:
+            print(f"⚠️  通用论坛评论 ({len(elements)}) 超过上限 (50)，已截断。", file=sys.stderr)
+        for el in elements[:50]:
             user_el = el.select_one("[class*='user'], [class*='author'], a[href*='user']")
             user = _clean_text(user_el.text) if user_el else ""
             content_el = el.select_one("[class*='content'], [class*='body'], [class*='text']")

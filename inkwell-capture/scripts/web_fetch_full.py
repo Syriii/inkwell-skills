@@ -115,6 +115,8 @@ def fetch_full(url: str, cookie: str | None = None,
         include_comments=False,
         include_tables=True,
         include_images=True,
+        include_formatting=True,
+        favor_precision=True,
     )
 
     if not body:
