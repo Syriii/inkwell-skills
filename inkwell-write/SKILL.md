@@ -43,11 +43,15 @@ description: >
 
 ```bash
 python .claude/skills/inkwell-search/scripts/searcher.py search \
-  --query "<主题>" --granularity both --top-k 5 --threshold 0.75
+  --query "<主题>" --granularity both --top-k 10 --threshold 0.50
 ```
 
 - ≥ 0.75 → **直接注入上下文**，段落落地到 references.md
-- < 0.75 → 列清单问用户要不要
+- 0.50 ~ 0.75 → 列清单问用户要不要
+- < 0.50 → 静默丢弃，报告"无密切相关内容"
+
+> 阈值依据：基于 BGE-small-zh-v1.5 在 25 篇中文社会类内容上的实测校准。
+> 0.50 以下为同一语言/大域但不相关内容（如"诬告案"搜索中出现"相亲市场"0.31）。
 
 ### 两种子模式
 
