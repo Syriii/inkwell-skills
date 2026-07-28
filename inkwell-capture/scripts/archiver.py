@@ -282,17 +282,21 @@ def main():
     parser = argparse.ArgumentParser(description="采集 Skill — 归档写入")
     parser.add_argument("--json", help="JSON 数据字符串")
     parser.add_argument("--stdin", action="store_true", help="从 stdin 读取 JSON")
+    parser.add_argument("--json-file", help="从文件读取 JSON（避免 shell 转义问题）")
     parser.add_argument("--project-root", default=None, help="项目根目录")
 
     args = parser.parse_args()
 
     try:
-        if args.stdin:
+        if args.json_file:
+            with open(args.json_file, encoding='utf-8') as f:
+                data = json.load(f)
+        elif args.stdin:
             data = json.load(sys.stdin)
         elif args.json:
             data = json.loads(args.json)
         else:
-            print("error: must provide --json or --stdin", file=sys.stderr)
+            print("error: must provide --json, --stdin, or --json-file", file=sys.stderr)
             sys.exit(1)
 
         root = Path(args.project_root) if args.project_root else None
