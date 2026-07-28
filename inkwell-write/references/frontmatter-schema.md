@@ -15,7 +15,7 @@ based_on:
 ---
 ```
 
-- `round_title`: 本轮讨论角度，区别于 summary 的 `topic`（整体主题）
+- `round_title`: 本轮讨论角度，区别于 summary 的 `slug`（目录标识）
 - `round`: 轮次编号，从 1 递增
 
 ## 讨论总结（type: summary）
@@ -23,7 +23,7 @@ based_on:
 ```yaml
 ---
 date: 2026-07-20
-topic: "欧盟AI法案讨论"
+slug: "eu-ai"
 type: summary
 category: 科技
 tags: [AI政策, 科技法规, 欧盟]
@@ -33,7 +33,7 @@ rounds: 3
 ---
 ```
 
-- `topic`: 整体讨论主题（区别于 round 的 `round_title`）
+- `slug`: 讨论目录名（区别于 round 的 `round_title`）
 - `rounds`: 总轮次数
 
 ## 创作提纲（type: outline）

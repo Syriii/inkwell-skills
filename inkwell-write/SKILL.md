@@ -355,3 +355,18 @@ creations/{article-slug}/
 ├── drafts/
 └── images/
 ```
+
+### 讨论与文章的关系
+
+**文章声明自己来自哪些讨论**（article-centric）。一个讨论可以被多篇文章引用，一篇文章可以聚合多个讨论。
+
+文章 frontmatter：
+```yaml
+source_discussions:
+  - "中医骨髓猪脑寒性之谜"
+  - "知乎食品谣言的社会传播"
+```
+
+`based_on` vs `source_discussions`：
+- `based_on` = 引用了哪些**素材**（archived 文件、URL）
+- `source_discussions` = 思想来自哪些**讨论**（discussion slug）
