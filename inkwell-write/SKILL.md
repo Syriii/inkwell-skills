@@ -202,14 +202,14 @@ python .claude/skills/inkwell-write/scripts/references_builder.py update \
 
 批量追加：
 ```bash
-python scripts/references_builder.py update \
+python .claude/skills/inkwell-write/scripts/references_builder.py update \
   --dir "topics/{slug}/discussion" \
   --add-multi '[["path1","label1","> excerpt1"],["url2","label2","excerpt2"]]'
 ```
 
 查看已收集的引用：
 ```bash
-python scripts/references_builder.py show --dir "topics/{slug}/discussion"
+python .claude/skills/inkwell-write/scripts/references_builder.py show --dir "topics/{slug}/discussion"
 ```
 
 ### 讨论升级为创作
