@@ -343,16 +343,15 @@ python .claude/skills/inkwell-write/scripts/discussion_writer.py status [--filte
 ## 目录结构
 
 ```
-topics/{topic-slug}/
-├── discussion/
-│   ├── {topic}讨论总结.md     ← type: summary
-│   ├── 初步结果.md             ← type: findings（创作就绪时提炼）
-│   ├── references.md
-│   └── rounds/
-│       └── NN-{角度}.md       ← type: discussion
-└── creation/
-    ├── outline.md             ← type: outline
-    ├── article.md             ← type: draft / article
-    ├── drafts/                ← 历史版本
-    └── images/
+discussions/{slug}/
+├── rounds/
+│   └── NN-{角度}.md
+├── references.md
+└── {slug}讨论总结.md
+
+creations/{article-slug}/
+├── {article-slug}.md
+├── outline.md
+├── drafts/
+└── images/
 ```
