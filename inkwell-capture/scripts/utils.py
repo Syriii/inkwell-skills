@@ -141,16 +141,12 @@ def extract_domain(url: str) -> str:
 # ---------------------------------------------------------------------------
 
 def escape_yaml(s: str) -> str:
-    """转义 YAML 双引号字符串中的特殊字符。
+    “””转义 YAML 双引号字符串中的特殊字符。
 
-    同时将中文弯引号转为书名号，避免被 YAML 解析器误认为字符串定界符。
-    """
-    # 中文弯双引号 → 书名号（语义接近，且不会与 YAML 定界符冲突）
-    s = s.replace('“', '「').replace('”', '」')
-    # 中文弯单引号 → 直角引号
-    s = s.replace('‘', '『').replace('’', '』')  # ' → 『, ' → 』
-    # ASCII 转义
-    return s.replace('\\', '\\\\').replace('"', '\\"')
+    中文弯双引号 “” 与 YAML 字符串定界符 “ 冲突，转为「」。
+    “””
+    s = s.replace(‘“’, ‘「’).replace(‘”’, ‘」’)  # “ → 「, “ → 」
+    return s.replace(‘\\’, ‘\\\\’).replace(‘”’, ‘\\”’)
 
 
 def extract_title_from_body(body: str) -> str:
