@@ -167,9 +167,11 @@ python .claude/skills/inkwell-write/scripts/references_builder.py update \
 
 ### 写入
 
+所有脚本路径统一使用项目根目录的相对路径。
+
 **每轮**：
 ```bash
-python scripts/discussion_writer.py write-round \
+python .claude/skills/inkwell-write/scripts/discussion_writer.py write-round \
   --dir "topics/{slug}/discussion" --round <N> \
   --title "<角度>" --category "<分类>" --tags "<标签>" \
   --based-on "<引用路径>" --content "<正文>"
@@ -177,7 +179,7 @@ python scripts/discussion_writer.py write-round \
 
 **总结**：
 ```bash
-python scripts/discussion_writer.py write-summary \
+python .claude/skills/inkwell-write/scripts/discussion_writer.py write-summary \
   --dir "topics/{slug}/discussion" --topic "<主题>" \
   --category "<分类>" --tags "<标签>" --rounds <N> \
   --based-on "<引用路径>" --content "<正文>"
