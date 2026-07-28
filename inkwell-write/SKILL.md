@@ -46,12 +46,29 @@ python .claude/skills/inkwell-search/scripts/searcher.py search \
   --query "<主题>" --granularity both --top-k 10 --threshold 0.50
 ```
 
-- ≥ 0.75 → **直接注入上下文**，段落落地到 references.md
+- ≥ 0.75 → **直接注入上下文**
 - 0.50 ~ 0.75 → 列清单问用户要不要
 - < 0.50 → 静默丢弃，报告"无密切相关内容"
 
 > 阈值依据：基于 BGE-small-zh-v1.5 在 25 篇中文社会类内容上的实测校准。
 > 0.50 以下为同一语言/大域但不相关内容（如"诬告案"搜索中出现"相亲市场"0.31）。
+
+**搜索后自动建立 references.md**（素材库存清单）：
+
+所有 ≥ 0.50 的结果自动写入 `topics/{slug}/discussion/references.md`：
+- 知乎问题目录 → 整目录引用（含所有回答，随时可取用）
+- 单篇文章 → 文件路径 + 摘要
+- 外部搜索（WebSearch/WebFetch）→ URL + 关键信息摘要
+
+```bash
+python .claude/skills/inkwell-write/scripts/references_builder.py update \
+  --dir "topics/{slug}/discussion" \
+  --add "<路径或URL>|<标签>|<摘要>"
+```
+
+**references.md 与 based_on 的区分**：
+- `references.md` = 这个主题**所有可用**素材（库存清单），后续讨论随时查阅
+- `based_on`（写入轮次时）= 本轮**实际引用**了的素材（出库记录）
 
 ### 开局分析
 
