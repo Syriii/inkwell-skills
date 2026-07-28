@@ -168,7 +168,7 @@ python .claude/skills/inkwell-write/scripts/references_builder.py update \
 
 讨论差不多了 → 问「继续深入还是先做总结？」
 - 继续 → 回到对话
-- 先到这里 → 生成 summary → `{topic}讨论总结.md`
+- 先到这里 → 生成 summary → `{slug}讨论总结.md`
 
 ### 写入
 
@@ -177,18 +177,21 @@ python .claude/skills/inkwell-write/scripts/references_builder.py update \
 **每轮**：
 ```bash
 python .claude/skills/inkwell-write/scripts/discussion_writer.py write-round \
-  --dir "topics/{slug}/discussion" --round <N> \
+  --dir "discussions/{slug}" --round <N> \
   --title "<角度>" --category "<分类>" --tags "<标签>" \
   --based-on "<引用路径>" --content "<正文>"
 ```
 
-**总结**：
+**总结**（合并了原 初步结果，同时承担讨论回顾 + 创作交接）：
 ```bash
 python .claude/skills/inkwell-write/scripts/discussion_writer.py write-summary \
-  --dir "topics/{slug}/discussion" --topic "<主题>" \
+  --dir "discussions/{slug}" \
   --category "<分类>" --tags "<标签>" --rounds <N> \
   --based-on "<引用路径>" --content "<正文>"
 ```
+
+> summary 的 slug 从 `--dir` 的 basename 自动推导，文件名 `{slug}讨论总结.md`。
+> 总结内容应包含：核心结论、证据来源、叙事弧线、待查证项——既是讨论回顾也是创作交接文档。
 
 ### 引用维护
 
