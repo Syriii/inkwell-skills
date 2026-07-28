@@ -217,7 +217,7 @@ python .claude/skills/inkwell-write/scripts/references_builder.py update \
 
 查看已收集的引用：
 ```bash
-python .claude/skills/inkwell-write/scripts/references_builder.py show --dir "topics/{slug}/discussion"
+python .claude/skills/inkwell-write/scripts/references_builder.py show --dir "discussions/{slug}"
 ```
 
 ### 创作就绪判断
