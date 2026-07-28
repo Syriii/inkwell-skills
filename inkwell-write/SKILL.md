@@ -19,10 +19,11 @@ description: >
 1. **检查 inkwell-search**
    - 检查 `.claude/skills/inkwell-search/` 是否存在
    - 不存在 → 自动安装（静默，用户无感）
-   - 确认 `.retrieval-index/config.json` 的 `source_dirs` 包含 `topics`，没有则追加
+   - 确认 `.retrieval-index/config.json` 的 `source_dirs` 包含 `discussions`，没有则追加
 
-2. **检查 topics/ 目录**
-   - 不存在 → `mkdir -p topics`
+2. **检查目录**
+   - `discussions/` 不存在 → `mkdir -p discussions`
+   - `creations/` 不存在 → `mkdir -p creations`
 
 ## 模式识别
 

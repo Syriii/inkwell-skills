@@ -86,7 +86,7 @@ def update_refs(dir_path: str, add: str | None = None,
     """添加/更新引用。同 path 覆盖已有条目。
 
     Args:
-        dir_path: discussion 目录路径
+        dir_path: discussions/{slug} 目录
         add: 单条引用 "path|label|excerpt"
         add_multi: JSON 数组 '[["path","label","excerpt"], ...]'
 
