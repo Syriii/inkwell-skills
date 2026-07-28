@@ -18,7 +18,7 @@ original_image: "images/original.png"  # 截图/图片类采集时
 ---
 ```
 
-## 讨论创作（topics/{slug}/）
+## 讨论创作（discussions/{slug}/）
 
 ### 讨论轮次（discussion round）
 ```yaml
@@ -57,7 +57,7 @@ type: outline
 category: 科技
 tags: [AI政策, 科技治理]
 based_on:
-  - topics/eu-ai-regulation/discussion/欧盟AI法案讨论总结.md
+  - discussions/eu-ai-regulation/欧盟AI法案讨论总结.md
 ---
 ```
 
@@ -71,7 +71,7 @@ category: 科技
 status: draft              # draft | review
 tags: [AI政策, 科技治理]
 based_on:
-  - topics/eu-ai-regulation/discussion/欧盟AI法案讨论总结.md
+  - discussions/eu-ai-regulation/欧盟AI法案讨论总结.md
 word_count: 3500
 ---
 ```
@@ -85,7 +85,7 @@ type: article
 category: 科技
 tags: [AI政策, 科技治理]
 based_on:
-  - topics/eu-ai-regulation/discussion/欧盟AI法案讨论总结.md
+  - discussions/eu-ai-regulation/欧盟AI法案讨论总结.md
 word_count: 3500
 ---
 ```
