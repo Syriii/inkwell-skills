@@ -324,6 +324,7 @@ inkwell-search 拉所有相关素材，Claude 自动整合。产出落在当前 
 topics/{topic-slug}/
 ├── discussion/
 │   ├── {topic}讨论总结.md     ← type: summary
+│   ├── 初步结果.md             ← type: findings（创作就绪时提炼）
 │   ├── references.md
 │   └── rounds/
 │       └── NN-{角度}.md       ← type: discussion
