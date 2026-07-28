@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """讨论创作 Skill — 提纲写入
 
-写入创作提纲到 topics/{slug}/creation/outline.md。
+写入创作提纲到 creations/{article-slug}/outline.md。
 
 用法：
   python outline_writer.py write --dir <dir> --title <...> --content <...>
