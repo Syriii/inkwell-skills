@@ -65,10 +65,15 @@ python .claude/skills/inkwell-search/scripts/searcher.py search \
 
 **搜索后自动建立 references.md**（素材库存清单）：
 
-所有 ≥ 0.50 的结果自动写入 `topics/{slug}/discussion/references.md`：
+写入 `topics/{slug}/discussion/references.md` 的素材：
+- ≥ 0.75（直接注入）→ 自动写入
+- 0.50 ~ 0.75 → 用户确认要的才写入，不要的不写
+- 外部搜索（WebSearch/WebFetch）→ 只要讨论中用到，就追加写入
+
+格式：
 - 知乎问题目录 → 整目录引用（含所有回答，随时可取用）
 - 单篇文章 → 文件路径 + 摘要
-- 外部搜索（WebSearch/WebFetch）→ URL + 关键信息摘要
+- 外部搜索 → URL + 关键信息摘要
 
 ```bash
 python .claude/skills/inkwell-write/scripts/references_builder.py update \
@@ -89,7 +94,7 @@ python .claude/skills/inkwell-write/scripts/references_builder.py update \
 3. **缺口**：素材没覆盖到的地方、没说清楚的矛盾、逻辑跳跃
 4. **可聊方向**：2-3 个值得展开讨论的角度
 
-输出开局分析后，再问用户选哪种模式进入讨论。
+输出开局分析后，用户从可聊方向中选择一个开始讨论。**默认以对话讨论方式进入**——用户不需要显式选择模式。
 
 ### 两种子模式
 
