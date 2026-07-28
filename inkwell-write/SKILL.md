@@ -199,7 +199,7 @@ python .claude/skills/inkwell-write/scripts/discussion_writer.py write-summary \
 
 ```bash
 python .claude/skills/inkwell-write/scripts/references_builder.py update \
-  --dir "topics/{slug}/discussion" \
+  --dir "discussions/{slug}" \
   --add "<path或URL>|<label>|<摘要>"
 ```
 
@@ -211,7 +211,7 @@ python .claude/skills/inkwell-write/scripts/references_builder.py update \
 批量追加：
 ```bash
 python .claude/skills/inkwell-write/scripts/references_builder.py update \
-  --dir "topics/{slug}/discussion" \
+  --dir "discussions/{slug}" \
   --add-multi '[["path1","label1","> excerpt1"],["url2","label2","excerpt2"]]'
 ```
 
@@ -281,7 +281,7 @@ python .claude/skills/inkwell-write/scripts/references_builder.py show --dir "to
 3. 写入：
 ```bash
 python .claude/skills/inkwell-write/scripts/outline_writer.py write \
-  --dir "topics/{slug}/creation" --title "<标题>" \
+  --dir "creations/{article-slug}" --title "<标题>" \
   --category "<分类>" --tags "<标签>" \
   --based-on "<引用路径>" --content "<提纲>"
 ```
@@ -291,7 +291,7 @@ python .claude/skills/inkwell-write/scripts/outline_writer.py write \
 2. 写入：
 ```bash
 python .claude/skills/inkwell-write/scripts/draft_writer.py write \
-  --dir "topics/{slug}/creation" --title "<标题>" \
+  --dir "creations/{article-slug}" --title "<标题>" \
   --category "<分类>" --tags "<标签>" \
   --status draft --word-count <N> \
   --based-on "<引用路径>" --content "<正文>"
