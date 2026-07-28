@@ -24,7 +24,7 @@ def write_outline(creation_dir: str, title: str, content: str,
     """写入提纲文件。
 
     Args:
-        creation_dir: topics/{slug}/creation 目录
+        creation_dir: creations/{article-slug} 目录
         title: 文章标题
         content: 提纲 Markdown 正文
         category: 分类
@@ -68,7 +68,7 @@ def main():
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("write")
-    p.add_argument("--dir", required=True, help="topics/{slug}/creation 目录")
+    p.add_argument("--dir", required=True, help="creations/{article-slug} 目录")
     p.add_argument("--title", required=True, help="文章标题")
     p.add_argument("--content", required=True, help="提纲 Markdown")
     p.add_argument("--category", default="")
