@@ -294,7 +294,9 @@ python .claude/skills/inkwell-write/scripts/draft_writer.py write \
   --dir "creations/{article-slug}" --title "<标题>" \
   --category "<分类>" --tags "<标签>" \
   --status draft --word-count <N> \
-  --based-on "<引用路径>" --content "<正文>"
+  --based-on "<引用路径>" \
+  --source-discussions "<讨论slug列表>" \
+  --content "<正文>"
 ```
 3. 呈现给用户
 
@@ -317,7 +319,19 @@ python .claude/skills/inkwell-search/scripts/searcher.py compare \
 
 ### 跨讨论创作
 
-inkwell-search 拉所有相关素材，Claude 自动整合。产出落在当前 topic 下；跨多个 topic 由用户决定放置位置。
+一篇文章可以聚合多个讨论的成果。在 Step 3 出草稿时，通过 `--source-discussions` 声明文章引用了哪些讨论的 slug。
+
+inkwell-search 拉所有相关素材，Claude 自动整合。产出落在 `creations/{article-slug}/` 下；跨多个讨论时由用户决定 article slug。
+
+### 产出状态查询
+
+随时查询哪些讨论已产出文章、哪些还没有：
+
+```bash
+python .claude/skills/inkwell-write/scripts/discussion_writer.py status [--filter created|uncreated|all]
+```
+
+原理：扫描 `creations/` 下所有文章的 `source_discussions` 字段，与 `discussions/` 下所有有记录的讨论做差集。
 
 ---
 
