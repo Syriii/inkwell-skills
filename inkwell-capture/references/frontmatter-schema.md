@@ -38,7 +38,7 @@ based_on:
 ```yaml
 ---
 date: 2026-07-20
-topic: "欧盟AI法案讨论"
+slug: "eu-ai-regulation"
 type: summary
 category: 科技
 tags: [AI政策, 科技法规, 欧盟]
