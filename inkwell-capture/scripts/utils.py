@@ -141,14 +141,13 @@ def extract_domain(url: str) -> str:
 # ---------------------------------------------------------------------------
 
 def escape_yaml(s: str) -> str:
-    “””Escape special characters for YAML double-quoted strings.
+    """Escape chars that could break YAML double-quoted strings.
 
-    Chinese curly double quotes “” conflict with YAML string delimiters,
-    so they are converted to corner brackets 「」.
-    “””
-    s = s.replace(‘“’, ‘「’).replace(‘”’, ‘」’)  # “ -> 「, “ -> 」
-    return s.replace(‘\\’, ‘\\\\’).replace(‘”’, ‘\\”’)
-
+    Chinese curly double quotes conflict with YAML delimiters
+    in some parsers (e.g. Obsidian), so normalize to corner brackets.
+    """
+    s = s.replace(chr(0x201c), chr(0x300c)).replace(chr(0x201d), chr(0x300d))
+    return s.replace(chr(92), chr(92)+chr(92)).replace(chr(34), chr(92)+chr(34))
 
 def extract_title_from_body(body: str) -> str:
     """从 Markdown body 中提取第一个 # 标题作为 title 兜底。"""
