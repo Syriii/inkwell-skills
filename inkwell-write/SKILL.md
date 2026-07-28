@@ -82,7 +82,7 @@ python .claude/skills/inkwell-search/scripts/searcher.py search \
 
 ```bash
 python .claude/skills/inkwell-write/scripts/references_builder.py update \
-  --dir "topics/{slug}/discussion" \
+  --dir "discussions/{slug}" \
   --add "<路径或URL>|<标签>|<摘要>"
 ```
 
@@ -150,11 +150,11 @@ python .claude/skills/inkwell-write/scripts/references_builder.py update \
 
 用户离开后回来继续讨论时：
 
-1. 扫描 `topics/` 下所有子目录，**已有讨论记录 = `discussion/rounds/` 下有至少一个 `.md` 文件**
+1. 扫描 `discussions/` 下所有子目录，**已有讨论记录 = `rounds/` 下有至少一个 `.md` 文件**
 2. 加载 `references.md`（弹药清单）+ 最新一轮 `rounds/` + 总结（如有）
 3. 呈现续接面板：
    ```
-   📂 {topic}
+   📂 {slug}
    ├── 已进行 N 轮
    ├── 上次聊到：{最新轮标题 + 一句话}
    ├── 未解决问题：{从最新轮的「未解决的问题」提取}
