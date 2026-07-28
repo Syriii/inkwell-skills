@@ -224,7 +224,7 @@ addTab('recent', '采集', () => {
 addTab('topics', '讨论', () => {
     const div = document.createElement('div');
     const ul = document.createElement('ul');
-    const pages = dv.pages('"topics"').sort(p => p.date, 'desc').slice(0, 10);
+    const pages = dv.pages('"discussions"').sort(p => p.date, 'desc').slice(0, 10);
     for (const p of pages) ul.appendChild(buildItem(p));
     div.appendChild(ul);
     return div;
@@ -234,7 +234,7 @@ addTab('topics', '讨论', () => {
 addTab('pub', '创作', () => {
     const div = document.createElement('div');
     const ul = document.createElement('ul');
-    const pages = dv.pages('"published"').sort(p => p.date, 'desc').slice(0, 10);
+    const pages = dv.pages('"creations"').sort(p => p.date, 'desc').slice(0, 10);
     for (const p of pages) ul.appendChild(buildItem(p));
     div.appendChild(ul);
     return div;
