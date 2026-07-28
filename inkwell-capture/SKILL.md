@@ -97,16 +97,16 @@ description: >
    - 图片 → `Read` 工具视觉分析，或 `ocr_text.py` 提取文字
    - 视频 → `Read` 工具逐帧分析（Claude 只能处理视频的关键帧，如需完整逐帧分析需用户提前用 ffmpeg 拆帧）
    - 混合时按文件类型自动匹配处理方式
-5. **汇总结果**：呈现分析结果，询问是否需要归档为 Markdown
-6. **归档（可选）**：如果用户要保存分析结果：
+7. **汇总结果**：呈现分析结果，询问是否需要归档为 Markdown
+8. **归档（可选）**：如果用户要保存分析结果：
    - 写入 Markdown 到 `archived/YYYYMMDD/{slug}/{slug}.md`
    - **将 inbox 中的源文件复制到** `archived/YYYYMMDD/{slug}/images/`（而非移动——源文件仍需保留在 inbox 直到验证完成）
    - 确认 `archived/YYYYMMDD/{slug}/images/` 中文件完整且可读
-7. **验证归档完整性**：确认以下条件全部满足后，才能进入清理步骤：
+9. **验证归档完整性**：确认以下条件全部满足后，才能进入清理步骤：
    - `archived/YYYYMMDD/{slug}/{slug}.md` 存在且内容完整
    - 源文件已复制到 `archived/YYYYMMDD/{slug}/images/`，数量、大小与 inbox 一致
    - 不满足时立即报告用户，**禁止继续**，**禁止清理 inbox**
-8. **清理**：验证通过后，根据 `.web-analysis.yaml` 中 `inbox_cleanup` 配置：
+10. **清理**：验证通过后，根据 `.web-analysis.yaml` 中 `inbox_cleanup` 配置：
    - `keep_dir`（默认）：`rm inbox/*` 只清文件，保留目录
    - `remove_dir`：`rm -rf inbox/` 删除整个目录
 9. **不复盘档案**：如果用户选择不归档，询问是否仍要清理 inbox 中的源文件，**阻塞等待**用户确认后才能清理
