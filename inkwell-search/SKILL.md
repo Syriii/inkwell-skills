@@ -93,7 +93,7 @@ python scripts/searcher.py compare --text-a "<text>" --text-b "<text>" [--strate
 
 ```json
 {
-  "source_dirs": ["archived", "topics"],
+  "source_dirs": ["archived", "discussions", "creations"],
   "embedding_model": "BAAI/bge-small-zh-v1.5",
   "search_threshold": 0.75,
   "last_indexed_at": null

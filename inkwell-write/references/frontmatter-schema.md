@@ -110,7 +110,7 @@ word_count: 2800
 | 文件 | type | 来源 |
 |------|------|------|
 | rounds/NN-{角度}.md | `discussion` | discussion_writer.py |
-| {topic}讨论总结.md | `summary` | discussion_writer.py |
+| {slug}讨论总结.md | `summary` | discussion_writer.py |
 | outline.md | `outline` | outline_writer.py |
-| article.md | `draft` / `article` | draft_writer.py |
+| {article-slug}.md | `draft` / `article` | draft_writer.py |
 | drafts/vN.md | `draft` | draft_writer.py（存档时自动加 version） |
