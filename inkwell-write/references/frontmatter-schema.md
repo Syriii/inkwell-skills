@@ -79,6 +79,8 @@ title: "从欧盟AI法案看全球AI治理趋势"
 type: article
 category: 科技
 tags: [AI政策, 科技治理]
+source_discussions:
+  - "eu-ai"
 based_on:
   - discussions/eu-ai/eu-ai讨论总结.md
 word_count: 3500
