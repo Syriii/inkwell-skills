@@ -139,12 +139,13 @@ python .claude/skills/inkwell-write/scripts/references_builder.py update \
 ```
 
 > 注意：`based_on` 只写本轮**实际引用**的素材，不是整个 references 清单。
+> 引用格式优先用 Obsidian wikilink `[[path|label]]`；对于不支持 wikilink 的阅读器，同时保留纯路径版本在正文中。
 
 ### 续接讨论
 
 用户离开后回来继续讨论时：
 
-1. 扫描 `topics/` 下已有讨论记录的 topic
+1. 扫描 `topics/` 下所有子目录，**已有讨论记录 = `discussion/rounds/` 下有至少一个 `.md` 文件**
 2. 加载 `references.md`（弹药清单）+ 最新一轮 `rounds/` + 总结（如有）
 3. 呈现续接面板：
    ```
