@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """讨论创作 Skill — 草稿写入 + 版本管理
 
-管理 topics/{slug}/creation/article.md 及 drafts/ 历史版本。
+管理 creations/{article-slug}/{article-slug}.md 及 drafts/ 历史版本。
 
 用法：
   python draft_writer.py write --dir <dir> --title <...> --content <...>
@@ -12,7 +12,6 @@
 import argparse
 import json
 import re
-import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -39,10 +38,12 @@ def _build_frontmatter(title: str, frontmatter_type: str,
                        category: str = "", tags: str = "",
                        based_on: str = "", word_count: int = 0,
                        status: str = "", version: int | None = None,
+                       source_discussions: str = "",
                        extra: dict | None = None) -> str:
     """构建 YAML frontmatter。"""
     tag_list = [t.strip() for t in tags.split(",") if t.strip()]
     based_list = [b.strip() for b in based_on.split(",") if b.strip()]
+    source_list = [s.strip() for s in source_discussions.split(",") if s.strip()]
 
     fm = ["---"]
     fm.append(f"date: {datetime.now().strftime('%Y-%m-%d')}")
@@ -57,6 +58,10 @@ def _build_frontmatter(title: str, frontmatter_type: str,
         fm.append(f"version: {version}")
     if tag_list:
         fm.append(f"tags: [{', '.join(tag_list)}]")
+    if source_list:
+        fm.append("source_discussions:")
+        for s in source_list:
+            fm.append(f"  - {s}")
     if based_list:
         fm.append("based_on:")
         for b in based_list:
@@ -71,23 +76,45 @@ def _build_frontmatter(title: str, frontmatter_type: str,
     return '\n'.join(fm)
 
 
+def _article_filepath(creation_dir: str) -> Path:
+    """从目录路径推导文章文件名 creations/{slug}/{slug}.md。"""
+    d = Path(creation_dir)
+    slug = d.name
+    return d / f"{slug}.md"
+
+
+def _ensure_images_dir(creation_dir: str) -> Path:
+    d = Path(creation_dir)
+    img = d / "images"
+    img.mkdir(parents=True, exist_ok=True)
+    return img
+
+
 def write_draft(creation_dir: str, title: str, content: str,
                 category: str = "", tags: str = "",
                 based_on: str = "", word_count: int = 0,
-                status: str = "draft") -> dict:
+                status: str = "draft",
+                source_discussions: str = "") -> dict:
     """写入草稿（首次或小改动更新）。
 
-    直接覆盖 article.md，不做版本存档。
+    直接覆盖 {slug}.md，不做版本存档。
     版本存档由 archive-and-write 命令单独处理。
+
+    Args:
+        creation_dir: creations/{article-slug} 目录
+        title: 文章标题
+        content: 文章正文 Markdown
+        source_discussions: 逗号分隔的讨论 slug 列表
     """
     d = Path(creation_dir)
     d.mkdir(parents=True, exist_ok=True)
 
-    filepath = d / "article.md"
+    filepath = _article_filepath(creation_dir)
     frontmatter = _build_frontmatter(
         title=title, frontmatter_type=status if status in ("draft", "article") else "draft",
         category=category, tags=tags, based_on=based_on,
         word_count=word_count, status=status,
+        source_discussions=source_discussions,
     )
 
     filepath.write_text(f"{frontmatter}\n\n{content}\n")
@@ -103,27 +130,26 @@ def write_draft(creation_dir: str, title: str, content: str,
 def archive_and_write(creation_dir: str, title: str, content: str,
                       category: str = "", tags: str = "",
                       based_on: str = "", word_count: int = 0,
-                      status: str = "draft") -> dict:
+                      status: str = "draft",
+                      source_discussions: str = "") -> dict:
     """存档当前版本后写入新版。
 
-    1. 如果 article.md 存在 → 移动到 drafts/vN.md
-    2. 写入新的 article.md
+    1. 如果 {slug}.md 存在 → 移动到 drafts/vN.md
+    2. 写入新的 {slug}.md
     """
     d = Path(creation_dir)
     d.mkdir(parents=True, exist_ok=True)
     drafts_dir = d / "drafts"
     drafts_dir.mkdir(parents=True, exist_ok=True)
 
-    article_path = d / "article.md"
+    article_path = _article_filepath(creation_dir)
     archived_version = None
 
     if article_path.exists():
         v = _next_version(drafts_dir)
         archived_path = drafts_dir / f"v{v}.md"
 
-        # 读取旧内容，给 version 字段打标
         old_content = article_path.read_text()
-        # 在 frontmatter 中插入 version 字段
         old_content = _inject_version(old_content, v)
         archived_path.write_text(old_content)
 
@@ -134,6 +160,7 @@ def archive_and_write(creation_dir: str, title: str, content: str,
         title=title, frontmatter_type="draft",
         category=category, tags=tags, based_on=based_on,
         word_count=word_count, status=status,
+        source_discussions=source_discussions,
     )
     article_path.write_text(f"{frontmatter}\n\n{content}\n")
 
@@ -148,7 +175,6 @@ def archive_and_write(creation_dir: str, title: str, content: str,
 
 def _inject_version(markdown: str, version: int) -> str:
     """在 frontmatter 中注入 version 字段。"""
-    # 找到 frontmatter 的 --- 结束标记前插入 version
     lines = markdown.split('\n')
     result = []
     in_fm = False
@@ -159,7 +185,6 @@ def _inject_version(markdown: str, version: int) -> str:
             if not in_fm:
                 in_fm = True
             elif not injected:
-                # 第二个 --- 前插入 version
                 result.insert(-1, f"version: {version}")
                 injected = True
                 in_fm = False
@@ -167,12 +192,11 @@ def _inject_version(markdown: str, version: int) -> str:
 
 
 def update_status(creation_dir: str, new_status: str) -> dict:
-    """更新 article.md 的 status 字段。
+    """更新 {slug}.md 的 status 字段。
 
     draft → review → article
     """
-    d = Path(creation_dir)
-    article_path = d / "article.md"
+    article_path = _article_filepath(creation_dir)
 
     if not article_path.exists():
         return {"error": "article_not_found", "path": str(article_path)}
@@ -200,29 +224,31 @@ def main():
 
     # write
     p = sub.add_parser("write")
-    p.add_argument("--dir", required=True)
-    p.add_argument("--title", required=True)
-    p.add_argument("--content", required=True)
+    p.add_argument("--dir", required=True, help="creations/{article-slug} 目录")
+    p.add_argument("--title", required=True, help="文章标题")
+    p.add_argument("--content", required=True, help="文章正文 Markdown")
     p.add_argument("--category", default="")
     p.add_argument("--tags", default="")
-    p.add_argument("--based-on", default="")
+    p.add_argument("--based-on", default="", help="逗号分隔的素材引用路径")
+    p.add_argument("--source-discussions", default="", help="逗号分隔的讨论 slug 列表")
     p.add_argument("--word-count", type=int, default=0)
     p.add_argument("--status", default="draft")
 
     # archive-and-write
     p = sub.add_parser("archive-and-write")
-    p.add_argument("--dir", required=True)
-    p.add_argument("--title", required=True)
-    p.add_argument("--content", required=True)
+    p.add_argument("--dir", required=True, help="creations/{article-slug} 目录")
+    p.add_argument("--title", required=True, help="文章标题")
+    p.add_argument("--content", required=True, help="文章正文 Markdown")
     p.add_argument("--category", default="")
     p.add_argument("--tags", default="")
-    p.add_argument("--based-on", default="")
+    p.add_argument("--based-on", default="", help="逗号分隔的素材引用路径")
+    p.add_argument("--source-discussions", default="", help="逗号分隔的讨论 slug 列表")
     p.add_argument("--word-count", type=int, default=0)
     p.add_argument("--status", default="draft")
 
     # update-status
     p = sub.add_parser("update-status")
-    p.add_argument("--dir", required=True)
+    p.add_argument("--dir", required=True, help="creations/{article-slug} 目录")
     p.add_argument("--status", required=True, choices=["draft", "review", "article"])
 
     args = parser.parse_args()
@@ -231,11 +257,13 @@ def main():
         if args.command == "write":
             result = write_draft(args.dir, args.title, args.content,
                                  args.category, args.tags, args.based_on,
-                                 args.word_count, args.status)
+                                 args.word_count, args.status,
+                                 args.source_discussions)
         elif args.command == "archive-and-write":
             result = archive_and_write(args.dir, args.title, args.content,
                                        args.category, args.tags, args.based_on,
-                                       args.word_count, args.status)
+                                       args.word_count, args.status,
+                                       args.source_discussions)
         elif args.command == "update-status":
             result = update_status(args.dir, args.status)
         else:
