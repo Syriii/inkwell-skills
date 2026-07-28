@@ -18,6 +18,9 @@ from pathlib import Path
 
 
 def _escape(s: str) -> str:
+    # Normalize Chinese curly double quotes to corner brackets
+    # to avoid conflict with YAML string delimiters
+    s = s.replace(chr(0x201c), chr(0x300c)).replace(chr(0x201d), chr(0x300d))
     return s.replace('\\', '\\\\').replace('"', '\\"')
 
 
