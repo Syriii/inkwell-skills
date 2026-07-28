@@ -190,7 +190,7 @@ python .claude/skills/inkwell-write/scripts/discussion_writer.py write-summary \
 `references.md` 是讨论的素材库存清单，**搜索注入时自动建立**。讨论过程中发现新素材时手动追加：
 
 ```bash
-python scripts/references_builder.py update \
+python .claude/skills/inkwell-write/scripts/references_builder.py update \
   --dir "topics/{slug}/discussion" \
   --add "<path或URL>|<label>|<摘要>"
 ```
@@ -256,7 +256,7 @@ python scripts/references_builder.py show --dir "topics/{slug}/discussion"
 2. 呈现 → 用户修改/确认 ✓
 3. 写入：
 ```bash
-python scripts/outline_writer.py write \
+python .claude/skills/inkwell-write/scripts/outline_writer.py write \
   --dir "topics/{slug}/creation" --title "<标题>" \
   --category "<分类>" --tags "<标签>" \
   --based-on "<引用路径>" --content "<提纲>"
@@ -266,7 +266,7 @@ python scripts/outline_writer.py write \
 1. Claude 按提纲写全文（wikilink 引用：`[[path|label]]`）
 2. 写入：
 ```bash
-python scripts/draft_writer.py write \
+python .claude/skills/inkwell-write/scripts/draft_writer.py write \
   --dir "topics/{slug}/creation" --title "<标题>" \
   --category "<分类>" --tags "<标签>" \
   --status draft --word-count <N> \
