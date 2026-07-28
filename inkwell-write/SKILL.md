@@ -36,13 +36,17 @@ description: >
 
 ---
 
-### Topic Slug
+### Discussion Slug
 
-每次讨论开始时，根据用户的话题生成中文 slug（如 `中医骨髓猪脑寒性之谜`），用于目录路径 `topics/{slug}/`。规则：
+每次讨论开始时，根据用户的话题生成中文 slug（如 `中医骨髓猪脑寒性之谜`），用于目录路径 `discussions/{slug}/`。规则：
 
 - **中文**，简洁（≤20 字），概括讨论主题
 - 如果是衔接 inkwell-capture 的已采集内容，用其归档目录名派生
 - 如果是全新话题，从用户的第一句话提取
+
+### Article Slug
+
+每篇文章开始时，生成 article slug，用于目录路径 `creations/{article-slug}/`。规则同 discussion slug。
 
 ---
 
@@ -66,7 +70,7 @@ python .claude/skills/inkwell-search/scripts/searcher.py search \
 
 **搜索后自动建立 references.md**（素材库存清单）：
 
-写入 `topics/{slug}/discussion/references.md` 的素材：
+写入 `discussions/{slug}/references.md` 的素材：
 - ≥ 0.75（直接注入）→ 自动写入
 - 0.50 ~ 0.75 → 用户确认要的才写入，不要的不写
 - 外部搜索（WebSearch/WebFetch）→ 只要讨论中用到，就追加写入
