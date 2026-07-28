@@ -104,7 +104,7 @@ python scripts/searcher.py compare --text-a "<text>" --text-b "<text>" [--strate
 
 搜索时支持：
 - `--exclude paths` — 排除指定文件（本次不想考虑某些文章）
-- `--scope dirs` — 限定搜索范围（"只在 topics 里搜"）
+- `--scope dirs` — 限定搜索范围（"只在 discussions 里搜"）
 
 ## 模型
 
