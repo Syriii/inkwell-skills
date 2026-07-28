@@ -212,9 +212,36 @@ python scripts/references_builder.py update \
 python scripts/references_builder.py show --dir "topics/{slug}/discussion"
 ```
 
+### 讨论升级为创作
+
+用户说「把这些讨论写成文章」时：
+
+1. **聚合素材**：加载所有轮次 + 总结（如有）+ `references.md`
+2. **呈现交接面板**：
+   ```
+   📝 准备基于以下内容创作文章：
+   ├── 已进行 N 轮讨论
+   ├── 引用素材：M 条
+   └── 轮次概览：
+       · 01-标题（核心结论一句话）
+       · 02-标题（核心结论一句话）
+   
+   以此为基础进入创作流程？
+   ```
+3. 用户确认 → 进入创作模式 Step 1（定方向），讨论素材作为上下文注入
+
 ---
 
 ## 创作模式
+
+### 入口（独立于讨论）
+
+直接进入创作模式（不经讨论）时，同样执行：
+
+1. 调 inkwell-search 搜索相关素材（同讨论模式的入口动作）
+2. 建立 `references.md`
+3. 做轻量版开局分析（总结 + 启发，不需四个方向）
+4. 进入 Step 1：定方向
 
 ### 五步流程（每步需用户确认）
 
@@ -256,6 +283,8 @@ python .claude/skills/inkwell-search/scripts/searcher.py compare \
 ```
 - ≥ 0.85 → 小改动，`draft_writer.py write` 原地更新
 - < 0.85 → 大改动，`draft_writer.py archive-and-write` 存档后写新版
+
+> 阈值 0.85 基于 BGE-small-zh-v1.5 在同类中文内容上的经验值。同一篇文章的微调通常在 0.85+，结构调整后通常降至 0.70-0.85。
 3. 反复迭代直到满意 ✓
 
 #### Step 5: 输出
