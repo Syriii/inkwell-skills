@@ -46,7 +46,7 @@ type: outline
 category: 科技
 tags: [AI政策, 科技治理]
 based_on:
-  - topics/eu-ai/discussion/欧盟AI法案讨论总结.md
+  - discussions/eu-ai/eu-ai讨论总结.md
 ---
 ```
 
@@ -60,11 +60,15 @@ type: draft
 category: 科技
 status: draft              # draft | review
 tags: [AI政策, 科技治理]
+source_discussions:
+  - "eu-ai"
 based_on:
-  - topics/eu-ai/discussion/欧盟AI法案讨论总结.md
+  - discussions/eu-ai/eu-ai讨论总结.md
 word_count: 3500
 ---
 ```
+
+- `source_discussions`: 文章思想来源的讨论 slug 列表
 
 ## 创作成品（type: article）
 
@@ -76,7 +80,7 @@ type: article
 category: 科技
 tags: [AI政策, 科技治理]
 based_on:
-  - topics/eu-ai/discussion/欧盟AI法案讨论总结.md
+  - discussions/eu-ai/eu-ai讨论总结.md
 word_count: 3500
 ---
 ```
