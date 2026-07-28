@@ -244,6 +244,8 @@ python .claude/skills/inkwell-write/scripts/references_builder.py show --dir "to
    ```
 3. 用户确认 → 进入创作模式 Step 1（定方向），讨论素材作为上下文注入
 
+> **讨论与创作是两条并行轨道。** 进入创作模式后，讨论轨道不关闭——关于文章角度、结构、取舍的讨论继续记录为轮次。创作轨道产出 outline → draft → article。两条轨道的引用链都指向同一个 `references.md`。
+
 ---
 
 ## 创作模式
