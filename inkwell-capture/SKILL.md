@@ -18,7 +18,7 @@ description: >
 1. 检查 `.web-analysis.yaml` 是否存在
 2. 不存在 → 创建目录结构 + 写入默认配置：
    ```
-   mkdir -p archived topics published inbox
+   mkdir -p archived published inbox
    ```
    写入 `.web-analysis.yaml`：
    ```yaml
