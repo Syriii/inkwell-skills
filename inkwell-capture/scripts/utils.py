@@ -141,11 +141,12 @@ def extract_domain(url: str) -> str:
 # ---------------------------------------------------------------------------
 
 def escape_yaml(s: str) -> str:
-    “””转义 YAML 双引号字符串中的特殊字符。
+    “””Escape special characters for YAML double-quoted strings.
 
-    中文弯双引号 “” 与 YAML 字符串定界符 “ 冲突，转为「」。
+    Chinese curly double quotes “” conflict with YAML string delimiters,
+    so they are converted to corner brackets 「」.
     “””
-    s = s.replace(‘“’, ‘「’).replace(‘”’, ‘」’)  # “ → 「, “ → 」
+    s = s.replace(‘“’, ‘「’).replace(‘”’, ‘」’)  # “ -> 「, “ -> 」
     return s.replace(‘\\’, ‘\\\\’).replace(‘”’, ‘\\”’)
 
 
