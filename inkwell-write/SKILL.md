@@ -275,7 +275,8 @@ python .claude/skills/inkwell-write/scripts/references_builder.py show --dir "di
 1. 用户给主题或素材
 2. 调 inkwell-search 自动注入相关素材（同讨论模式）
 3. 讨论确定：文章角度、语气、篇幅、目标读者
-4. 用户确认 ✓
+4. **选文风**：从 `references/styles/` 中选择匹配的写作风格。根据文章 category 匹配风格的 `suitable_for` 字段。若无匹配风格，用默认对话感文风。选定后全文遵循该风格文件。
+5. 用户确认 ✓
 
 #### Step 2: 写提纲 → 审查 → 用户确认
 
@@ -301,7 +302,7 @@ python .claude/skills/inkwell-write/scripts/outline_writer.py write \
 
 #### Step 3: 出草稿 → 审查 → 用户确认
 
-1. Claude 按提纲写全文
+1. Claude 按选定风格和提纲写全文
 2. **审查草稿**（逐项通过后呈现给用户）：
 
 | # | 检查项 | 通过标准 |
