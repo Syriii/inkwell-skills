@@ -156,39 +156,42 @@ def archive_and_write(creation_dir: str, title: str, content: str,
                       source_discussions: str = "") -> dict:
     """存档当前版本后写入新版。
 
-    1. 如果 {slug}.md 存在 → 移动到 drafts/vN.md
-    2. 写入新的 {slug}.md
+    1. 当前草稿（drafts/draft.md）存在 → 移动到 drafts/vN.md
+    2. 写入新版到 drafts/draft.md（status=draft）或 {slug}.md（status=article）
     """
     d = Path(creation_dir)
     d.mkdir(parents=True, exist_ok=True)
     drafts_dir = d / "drafts"
     drafts_dir.mkdir(parents=True, exist_ok=True)
 
+    draft_path = _draft_filepath(creation_dir)
     article_path = _article_filepath(creation_dir)
     archived_version = None
 
-    if article_path.exists():
+    # Archive current draft if it exists
+    if draft_path.exists():
         v = _next_version(drafts_dir)
         archived_path = drafts_dir / f"v{v}.md"
 
-        old_content = article_path.read_text()
+        old_content = draft_path.read_text()
         old_content = _inject_version(old_content, v)
         archived_path.write_text(old_content)
 
         archived_version = v
 
-    # 写入新版
+    # Write new version to correct location
+    write_path = _resolve_write_path(creation_dir, status)
     frontmatter = _build_frontmatter(
-        title=title, frontmatter_type="draft",
+        title=title, frontmatter_type="article" if status == "article" else "draft",
         category=category, tags=tags, based_on=based_on,
         word_count=word_count, status=status,
         source_discussions=source_discussions,
     )
-    article_path.write_text(f"{frontmatter}\n\n{content}\n")
+    write_path.write_text(f"{frontmatter}\n\n{content}\n")
 
     return {
         "action": "archived_and_written",
-        "path": str(article_path),
+        "path": str(write_path),
         "title": title,
         "archived_version": archived_version,
         "drafts_dir": str(drafts_dir),
@@ -214,16 +217,22 @@ def _inject_version(markdown: str, version: int) -> str:
 
 
 def update_status(creation_dir: str, new_status: str) -> dict:
-    """更新 {slug}.md 的 status 字段。
+    """更新文章 status 并移动到正确位置。
 
-    draft → review → article
+    draft → article: 将 drafts/draft.md 内容移至 {slug}.md，更新 status
     """
+    draft_path = _draft_filepath(creation_dir)
     article_path = _article_filepath(creation_dir)
 
-    if not article_path.exists():
+    # Determine source: prefer draft, fall back to article
+    if draft_path.exists():
+        source_path = draft_path
+    elif article_path.exists():
+        source_path = article_path
+    else:
         return {"error": "article_not_found", "path": str(article_path)}
 
-    content = article_path.read_text()
+    content = source_path.read_text()
     content = re.sub(
         r'^status:\s*\w+$',
         f'status: {new_status}',
@@ -231,11 +240,19 @@ def update_status(creation_dir: str, new_status: str) -> dict:
         flags=re.MULTILINE,
     )
 
-    article_path.write_text(content)
+    # When promoting to article, write to {slug}.md and remove draft
+    if new_status == "article":
+        article_path.write_text(content)
+        if draft_path.exists():
+            draft_path.unlink()
+        target_path = article_path
+    else:
+        source_path.write_text(content)
+        target_path = source_path
 
     return {
         "action": "status_updated",
-        "path": str(article_path),
+        "path": str(target_path),
         "status": new_status,
     }
 
