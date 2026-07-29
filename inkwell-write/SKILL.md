@@ -267,7 +267,9 @@ python .claude/skills/inkwell-write/scripts/references_builder.py show --dir "di
 3. 做轻量版开局分析（总结 + 启发，不需四个方向）
 4. 进入 Step 1：定方向
 
-### 五步流程（每步需用户确认）
+### 五步流程（每步需用户确认，产出步骤内含审查）
+
+每个产出步骤（提纲、草稿、定稿）写入后，Claude 必须先执行一次**结构化审查**，再呈现给用户确认。审查不是自我批改——是逐条对照检查表，判断是否通过、是否需要修复。
 
 #### Step 1: 定方向
 1. 用户给主题或素材
@@ -275,10 +277,21 @@ python .claude/skills/inkwell-write/scripts/references_builder.py show --dir "di
 3. 讨论确定：文章角度、语气、篇幅、目标读者
 4. 用户确认 ✓
 
-#### Step 2: 写提纲
+#### Step 2: 写提纲 → 审查 → 用户确认
+
 1. Claude 基于素材写提纲（一/二级标题）
-2. 呈现 → 用户修改/确认 ✓
-3. 写入：
+2. **审查提纲**（逐项通过后呈现给用户）：
+
+| # | 检查项 | 通过标准 |
+|---|--------|---------|
+| 1 | **读者顺序** | 结构是否按读者自然关心的顺序展开（听过→哪来的→对不对→怎么用），而非学术框架 |
+| 2 | **段段有目的** | 每一段在全文逻辑链中承担什么角色（破/转/用），去掉任何一段会不会断 |
+| 3 | **逻辑闭合** | 开头提出的问题，结尾有没有回扣回答 |
+| 4 | **字数适配** | 预估字数是否匹配目标平台（公众号科普观点文 1000-1500 字） |
+| 5 | **遗漏检查** | 讨论中的关键论据有没有在提纲里丢了 |
+
+3. 呈现审查结论 + 提纲 → 用户修改/确认 ✓
+4. 写入：
 ```bash
 python .claude/skills/inkwell-write/scripts/outline_writer.py write \
   --dir "creations/{article-slug}" --title "<标题>" \
@@ -286,9 +299,21 @@ python .claude/skills/inkwell-write/scripts/outline_writer.py write \
   --based-on "<引用路径>" --content "<提纲>"
 ```
 
-#### Step 3: 出草稿
-1. Claude 按提纲写全文（wikilink 引用：`[[path|label]]`）
-2. 写入：
+#### Step 3: 出草稿 → 审查 → 用户确认
+
+1. Claude 按提纲写全文
+2. **审查草稿**（逐项通过后呈现给用户）：
+
+| # | 检查项 | 通过标准 |
+|---|--------|---------|
+| 1 | **开头钩子** | 前 50-100 字是否让读者有理由继续读（场景共鸣、反直觉、提问） |
+| 2 | **段段有血肉** | 每个论点有没有配例子/细节/数据——抽象结论要有可感知的支撑 |
+| 3 | **语气全篇一致** | 不忽冷忽热——该讲道理的地方不突然煽情，该接地气的地方不突然学术腔 |
+| 4 | **结尾回扣** | 是否回到开头的钩子或场景，让读者感到「看完了有变化」 |
+| 5 | **无素材残留** | 是否为引用而引用的段落、不服务论点的知识展示——有就删 |
+
+3. 呈现审查结论 + 草稿 → 用户确认 ✓
+4. 写入：
 ```bash
 python .claude/skills/inkwell-write/scripts/draft_writer.py write \
   --dir "creations/{article-slug}" --title "<标题>" \
@@ -298,11 +323,10 @@ python .claude/skills/inkwell-write/scripts/draft_writer.py write \
   --source-discussions "<讨论slug列表>" \
   --content "<正文>"
 ```
-3. 呈现给用户
 
 #### Step 4: 审阅迭代
 1. 用户反馈 → Claude 修改
-2. 新旧版本比较：
+2. 每次修改后根据变更大小决定写入方式：
 ```bash
 python .claude/skills/inkwell-search/scripts/searcher.py compare \
   --text-a "<旧版>" --text-b "<新版>" --strategy auto
@@ -313,9 +337,19 @@ python .claude/skills/inkwell-search/scripts/searcher.py compare \
 > 阈值 0.85 基于 BGE-small-zh-v1.5 在同类中文内容上的经验值。同一篇文章的微调通常在 0.85+，结构调整后通常降至 0.70-0.85。
 3. 反复迭代直到满意 ✓
 
-#### Step 5: 输出
-1. `draft_writer.py update-status --status article`
-2. 呈现最终版本 + 历史版本清单
+#### Step 5: 输出 → 审查 → 定稿
+
+1. **审查定稿**（逐项通过后写入为终版）：
+
+| # | 检查项 | 通过标准 |
+|---|--------|---------|
+| 1 | **标题准确** | 标题是否准确反映文章内容，没有标题党或文不对题 |
+| 2 | **可读性** | 手机屏幕每段不超过 4 行，小标题层级清晰，关键句突出 |
+| 3 | **完整性** | frontmatter 完整（title, category, tags, source_discussions, based_on），正文无残缺 |
+| 4 | **引用合规** | 外部引用标注来源，禁写内容无残留 |
+
+2. `draft_writer.py update-status --status article`
+3. 呈现最终版本 + 历史版本清单
 
 ### 跨讨论创作
 
