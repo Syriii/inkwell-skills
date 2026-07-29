@@ -313,7 +313,7 @@ python .claude/skills/inkwell-write/scripts/outline_writer.py write \
 | 5 | **无素材残留** | 是否为引用而引用的段落、不服务论点的知识展示——有就删 |
 
 3. 呈现审查结论 + 草稿 → 用户确认 ✓
-4. 写入：
+4. 写入（**每次写入自动生成新版本**：drafts/v1.md, v2.md, ...）：
 ```bash
 python .claude/skills/inkwell-write/scripts/draft_writer.py write \
   --dir "creations/{article-slug}" --title "<标题>" \
@@ -326,13 +326,13 @@ python .claude/skills/inkwell-write/scripts/draft_writer.py write \
 
 #### Step 4: 审阅迭代
 1. 用户反馈 → Claude 修改
-2. 每次修改后根据变更大小决定写入方式：
+2. 每次修改后判断变更大小：
 ```bash
 python .claude/skills/inkwell-search/scripts/searcher.py compare \
   --text-a "<旧版>" --text-b "<新版>" --strategy auto
 ```
-- ≥ 0.85 → 小改动，`draft_writer.py write` 原地更新
-- < 0.85 → 大改动，`draft_writer.py archive-and-write` 存档后写新版
+- 变更大小仅用于**告知用户改了多少**，不决定写入方式
+- 每次修改均通过 `draft_writer.py write` 写入，自动生成 vN+1
 
 > 阈值 0.85 基于 BGE-small-zh-v1.5 在同类中文内容上的经验值。同一篇文章的微调通常在 0.85+，结构调整后通常降至 0.70-0.85。
 3. 反复迭代直到满意 ✓
@@ -348,7 +348,7 @@ python .claude/skills/inkwell-search/scripts/searcher.py compare \
 | 3 | **完整性** | frontmatter 完整（title, category, tags, source_discussions, based_on），正文无残缺 |
 | 4 | **引用合规** | 外部引用标注来源，禁写内容无残留 |
 
-2. `draft_writer.py update-status --status article`
+2. `draft_writer.py update-status --status article`（取最新编号草稿 → `{slug}.md`，旧草稿保留在 drafts/）
 3. 呈现最终版本 + 历史版本清单
 
 ### 跨讨论创作
