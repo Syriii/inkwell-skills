@@ -384,9 +384,12 @@ discussions/{slug}/
 └── {slug}讨论总结.md
 
 creations/{article-slug}/
-├── {article-slug}.md
+├── {article-slug}.md          ← 终稿（update-status → article 后生成）
 ├── outline.md
 ├── drafts/
+│   ├── v1.md                  ← 初稿
+│   ├── v2.md                  ← 修改后新版本
+│   └── ...
 └── images/
 ```
 
