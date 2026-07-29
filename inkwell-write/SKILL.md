@@ -375,6 +375,24 @@ python .claude/skills/inkwell-write/scripts/discussion_writer.py status [--filte
 - CLI 参数输入，stdout JSON，stderr 错误
 - 退出码 0 = 成功
 
+## 写作风格
+
+文风作为独立文件管理在 `references/styles/`，可随时新增、修改，不影响 skill 本体。
+
+每篇风格文件包含：
+- `name`：风格名称
+- `suitable_for`：适用 category 列表（用于 Step 1 自动匹配）
+- 核心定位、开头/正文/结尾规范
+- **AI 味检测清单**（草稿审查时对照检查）
+
+当前可用风格：
+
+| 风格 | 适用 | 说明 |
+|------|------|------|
+| [健康科普](references/styles/health-science.md) | 健康、医疗、饮食、生活常识 | 丁香医生/果壳风，"穿白大褂的朋友" |
+
+审查草稿时，**额外对照风格文件的 AI 味检测清单**逐项检查。
+
 ## 目录结构
 
 ```
