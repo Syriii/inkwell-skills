@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """讨论创作 Skill — 草稿写入 + 版本管理
 
-管理 creations/{article-slug}/{article-slug}.md 及 drafts/ 历史版本。
+管理 creations/{article-slug}/ 下的草稿和终稿。
+- 每次写入自动生成编号草稿 drafts/v1.md, v2.md, ...
+- 定稿时取最新草稿移至 {slug}.md
+- 旧版本全部保留在 drafts/ 下
 
 用法：
   python draft_writer.py write --dir <dir> --title <...> --content <...>
@@ -35,6 +38,19 @@ def _next_version(drafts_dir: Path) -> int:
         if m:
             nums.append(int(m.group(1)))
     return max(nums, default=0) + 1
+
+
+def _latest_version(drafts_dir: Path) -> int | None:
+    """获取最新版本号，无草稿时返回 None。"""
+    if not drafts_dir.exists():
+        return None
+    existing = list(drafts_dir.glob("v*.md"))
+    nums = []
+    for f in existing:
+        m = re.match(r'v(\d+)\.md$', f.name)
+        if m:
+            nums.append(int(m.group(1)))
+    return max(nums) if nums else None
 
 
 def _build_frontmatter(title: str, frontmatter_type: str,
@@ -86,32 +102,20 @@ def _article_filepath(creation_dir: str) -> Path:
     return d / f"{slug}.md"
 
 
-def _ensure_images_dir(creation_dir: str) -> Path:
+def _ensure_drafts_dir(creation_dir: str) -> Path:
+    """确保 drafts/ 目录存在。"""
     d = Path(creation_dir)
-    img = d / "images"
-    img.mkdir(parents=True, exist_ok=True)
-    return img
+    d.mkdir(parents=True, exist_ok=True)
+    drafts = d / "drafts"
+    drafts.mkdir(parents=True, exist_ok=True)
+    return drafts
 
 
-def _draft_filepath(creation_dir: str) -> Path:
-    """草稿路径 drafts/draft.md。"""
-    return Path(creation_dir) / "drafts" / "draft.md"
-
-
-def _resolve_write_path(creation_dir: str, status: str) -> Path:
-    """根据 status 决定写入位置。
-
-    draft → drafts/draft.md
-    article → {slug}.md（终稿）
-    """
-    if status == "article":
-        return _article_filepath(creation_dir)
-    else:
-        d = Path(creation_dir)
-        d.mkdir(parents=True, exist_ok=True)
-        drafts_dir = d / "drafts"
-        drafts_dir.mkdir(parents=True, exist_ok=True)
-        return _draft_filepath(creation_dir)
+def _next_draft_path(creation_dir: str) -> Path:
+    """drafts/v{next}.md 路径。"""
+    drafts_dir = _ensure_drafts_dir(creation_dir)
+    v = _next_version(drafts_dir)
+    return drafts_dir / f"v{v}.md", v
 
 
 def write_draft(creation_dir: str, title: str, content: str,
@@ -119,11 +123,7 @@ def write_draft(creation_dir: str, title: str, content: str,
                 based_on: str = "", word_count: int = 0,
                 status: str = "draft",
                 source_discussions: str = "") -> dict:
-    """写入草稿（首次或小改动更新）。
-
-    status=draft → drafts/draft.md
-    status=article → {slug}.md（终稿）
-    不做版本存档。版本存档由 archive-and-write 命令单独处理。
+    """写入草稿，每次创建新的编号版本 drafts/v{N}.md。
 
     Args:
         creation_dir: creations/{article-slug} 目录
@@ -131,11 +131,12 @@ def write_draft(creation_dir: str, title: str, content: str,
         content: 文章正文 Markdown
         source_discussions: 逗号分隔的讨论 slug 列表
     """
-    filepath = _resolve_write_path(creation_dir, status)
+    filepath, version = _next_draft_path(creation_dir)
     frontmatter = _build_frontmatter(
-        title=title, frontmatter_type="article" if status == "article" else "draft",
+        title=title, frontmatter_type="draft",
         category=category, tags=tags, based_on=based_on,
-        word_count=word_count, status=status,
+        word_count=word_count, status="draft",
+        version=version,
         source_discussions=source_discussions,
     )
 
@@ -145,7 +146,8 @@ def write_draft(creation_dir: str, title: str, content: str,
         "action": "draft_written",
         "path": str(filepath),
         "title": title,
-        "status": status,
+        "version": version,
+        "status": "draft",
     }
 
 
@@ -154,84 +156,28 @@ def archive_and_write(creation_dir: str, title: str, content: str,
                       based_on: str = "", word_count: int = 0,
                       status: str = "draft",
                       source_discussions: str = "") -> dict:
-    """存档当前版本后写入新版。
+    """写入草稿，创建新的编号版本。与 write 行为一致——每次写入都是新版本。
 
-    1. 当前草稿（drafts/draft.md）存在 → 移动到 drafts/vN.md
-    2. 写入新版到 drafts/draft.md（status=draft）或 {slug}.md（status=article）
+    保留此命令用于语义区分：archive-and-write 暗示大改动。
     """
-    d = Path(creation_dir)
-    d.mkdir(parents=True, exist_ok=True)
-    drafts_dir = d / "drafts"
-    drafts_dir.mkdir(parents=True, exist_ok=True)
-
-    draft_path = _draft_filepath(creation_dir)
-    article_path = _article_filepath(creation_dir)
-    archived_version = None
-
-    # Archive current draft if it exists
-    if draft_path.exists():
-        v = _next_version(drafts_dir)
-        archived_path = drafts_dir / f"v{v}.md"
-
-        old_content = draft_path.read_text()
-        old_content = _inject_version(old_content, v)
-        archived_path.write_text(old_content)
-
-        archived_version = v
-
-    # Write new version to correct location
-    write_path = _resolve_write_path(creation_dir, status)
-    frontmatter = _build_frontmatter(
-        title=title, frontmatter_type="article" if status == "article" else "draft",
-        category=category, tags=tags, based_on=based_on,
-        word_count=word_count, status=status,
-        source_discussions=source_discussions,
-    )
-    write_path.write_text(f"{frontmatter}\n\n{content}\n")
-
-    return {
-        "action": "archived_and_written",
-        "path": str(write_path),
-        "title": title,
-        "archived_version": archived_version,
-        "drafts_dir": str(drafts_dir),
-    }
-
-
-def _inject_version(markdown: str, version: int) -> str:
-    """在 frontmatter 中注入 version 字段。"""
-    lines = markdown.split('\n')
-    result = []
-    in_fm = False
-    injected = False
-    for line in lines:
-        result.append(line)
-        if line.strip() == "---":
-            if not in_fm:
-                in_fm = True
-            elif not injected:
-                result.insert(-1, f"version: {version}")
-                injected = True
-                in_fm = False
-    return '\n'.join(result)
+    return write_draft(creation_dir, title, content,
+                       category, tags, based_on, word_count,
+                       status, source_discussions)
 
 
 def update_status(creation_dir: str, new_status: str) -> dict:
-    """更新文章 status 并移动到正确位置。
+    """定稿：将最新草稿移至 {slug}.md，更新 status 为 article。
 
-    draft → article: 将 drafts/draft.md 内容移至 {slug}.md，更新 status
+    draft → article: 取 drafts/ 下最大版本号 → 写入 {slug}.md
     """
-    draft_path = _draft_filepath(creation_dir)
+    drafts_dir = _ensure_drafts_dir(creation_dir)
     article_path = _article_filepath(creation_dir)
 
-    # Determine source: prefer draft, fall back to article
-    if draft_path.exists():
-        source_path = draft_path
-    elif article_path.exists():
-        source_path = article_path
-    else:
-        return {"error": "article_not_found", "path": str(article_path)}
+    latest_v = _latest_version(drafts_dir)
+    if latest_v is None:
+        return {"error": "no_draft_found", "path": str(creation_dir)}
 
+    source_path = drafts_dir / f"v{latest_v}.md"
     content = source_path.read_text()
     content = re.sub(
         r'^status:\s*\w+$',
@@ -239,20 +185,20 @@ def update_status(creation_dir: str, new_status: str) -> dict:
         content,
         flags=re.MULTILINE,
     )
+    # 移除 version 字段（终稿不需要版本号）
+    content = re.sub(
+        r'^version:\s*\d+\n',
+        '',
+        content,
+        flags=re.MULTILINE,
+    )
 
-    # When promoting to article, write to {slug}.md and remove draft
-    if new_status == "article":
-        article_path.write_text(content)
-        if draft_path.exists():
-            draft_path.unlink()
-        target_path = article_path
-    else:
-        source_path.write_text(content)
-        target_path = source_path
+    article_path.write_text(content)
 
     return {
         "action": "status_updated",
-        "path": str(target_path),
+        "path": str(article_path),
+        "source_version": latest_v,
         "status": new_status,
     }
 
