@@ -93,6 +93,27 @@ def _ensure_images_dir(creation_dir: str) -> Path:
     return img
 
 
+def _draft_filepath(creation_dir: str) -> Path:
+    """草稿路径 drafts/draft.md。"""
+    return Path(creation_dir) / "drafts" / "draft.md"
+
+
+def _resolve_write_path(creation_dir: str, status: str) -> Path:
+    """根据 status 决定写入位置。
+
+    draft → drafts/draft.md
+    article → {slug}.md（终稿）
+    """
+    if status == "article":
+        return _article_filepath(creation_dir)
+    else:
+        d = Path(creation_dir)
+        d.mkdir(parents=True, exist_ok=True)
+        drafts_dir = d / "drafts"
+        drafts_dir.mkdir(parents=True, exist_ok=True)
+        return _draft_filepath(creation_dir)
+
+
 def write_draft(creation_dir: str, title: str, content: str,
                 category: str = "", tags: str = "",
                 based_on: str = "", word_count: int = 0,
@@ -100,8 +121,9 @@ def write_draft(creation_dir: str, title: str, content: str,
                 source_discussions: str = "") -> dict:
     """写入草稿（首次或小改动更新）。
 
-    直接覆盖 {slug}.md，不做版本存档。
-    版本存档由 archive-and-write 命令单独处理。
+    status=draft → drafts/draft.md
+    status=article → {slug}.md（终稿）
+    不做版本存档。版本存档由 archive-and-write 命令单独处理。
 
     Args:
         creation_dir: creations/{article-slug} 目录
@@ -109,12 +131,9 @@ def write_draft(creation_dir: str, title: str, content: str,
         content: 文章正文 Markdown
         source_discussions: 逗号分隔的讨论 slug 列表
     """
-    d = Path(creation_dir)
-    d.mkdir(parents=True, exist_ok=True)
-
-    filepath = _article_filepath(creation_dir)
+    filepath = _resolve_write_path(creation_dir, status)
     frontmatter = _build_frontmatter(
-        title=title, frontmatter_type=status if status in ("draft", "article") else "draft",
+        title=title, frontmatter_type="article" if status == "article" else "draft",
         category=category, tags=tags, based_on=based_on,
         word_count=word_count, status=status,
         source_discussions=source_discussions,
