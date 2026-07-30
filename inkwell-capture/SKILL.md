@@ -184,6 +184,20 @@ archived/YYYYMMDD/{问题名称-slug}/
 - 下载图片统一放在 `images/`，回答正文中直接用 `images/xxx.jpg` 引用
 - 评论区上限由 `comment_limit` 控制（默认 500 条），超过时先询问用户
 
+#### NGA (bbs.nga.cn)
+
+**URL 模式**：`/read.php?tid={数字}` — 论坛帖子。
+
+**采集方式**：`forum_scraper.py` 自动识别 NGA 域名，调用 NGA 专用处理器（`forum/nga.py`）。自动从 `.env` 加载 `NGA_COOKIE`。支持多页采集、BBCode 清洗、图片提取、用户归属标记。
+
+**NGA 特有情况 — 帖子锁定/删除**：
+
+NGA 帖子可能被版主锁定或删除，页面显示「此帖子被锁定」「帖子不存在」等提示。此时：
+- **立即停止采集**，不要重试（跟 Cookie 或网络无关，换任何方式都看不到）
+- 返回明确错误给用户：「帖子已被锁定或删除，无法采集：[url]」
+
+**NGA 图片反盗链**：NGA 图片 CDN 对 Python `requests` 的 TLS fingerprint 会返回 567 错误。降级方案：`curl` + Cookie + Referer 头。
+
 ### Cookie 获取指导
 
 采集需要登录的站点时，不要只是说"请参考 cookie-guide.md"。应当：
