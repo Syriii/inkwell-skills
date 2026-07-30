@@ -553,7 +553,7 @@ python .claude/skills/inkwell-write/scripts/discussion_writer.py status [--filte
 |------|------|------|------|
 | [健康科普](references/styles/health-science.md) | 健康科普 | 穿白大褂的朋友 | 丁香医生/果壳风 |
 
-审查草稿时，完成通用 AI 味检测后再对照风格文件 §9 做风格复审。
+审查草稿时，完成通用 AI 味检测后再对照风格文件 §10（风格特有禁忌）做风格复审。
 
 ## 目录结构
 
