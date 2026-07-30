@@ -284,7 +284,8 @@ Subagent 的完整指令见 `references/subagent-prompt.md`。使用时替换其
 - **subagent_type**: 不指定，使用默认的 general-purpose agent
 - **description**: 简短描述如 "采集 {url 或标题}"
 - Cookie 处理：subagent 可以 Read .env 文件读取已存储的 Cookie
-- Playwright：优先使用**本地 Python Playwright**（`web_fetch_full.py`）。如果本地 Chromium 安装失败（网络问题），降级使用 **MCP Playwright** 完成渲染。
+- 工具选择：遵循 **L1 脚本 → L2 本地 Playwright 脚本 → L3 MCP 浏览器** 的优先级。L3 是最后手段，不是默认选项。Subagent 同样必须遵守此铁律
+- 图片 OCR：采集到的图片如需提取文字，使用 `ocr_text.py`，不要现场用其他方式处理
 - 图片分析和字段生成：subagent 具备 Claude 能力，可以直接完成
 - **错误反馈**：任何失败（采集失败、安装失败、需要用户交互）都必须**返回明确的错误信息和建议方案**给主会话，禁止静默卡住。
 
