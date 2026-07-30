@@ -492,7 +492,7 @@ python .claude/skills/inkwell-write/scripts/discussion_writer.py status [--filte
 - 达不到时报告缺口，降级需用户确认（底线：8 篇、2 来源、每来源 4+ 篇）
 
 **Step C3: 逐篇拆解 + 交叉对比**
-- 按 `references/style-template.md` 的 9 段结构逐篇标注
+- 按 `references/style-template.md` 的 10 段结构逐篇标注
 - 不同来源之间找共性（核心人格）和差异（子变体）
 - 输出风格文件到 `references/styles/{style-name}.md`
 
