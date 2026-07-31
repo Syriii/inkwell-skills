@@ -271,6 +271,8 @@ NGA 帖子可能被版主锁定或删除，页面显示「此帖子被锁定」�
 
 过程中遇到问题（评论超限、Cookie 缺失）**直接在对话中确认**，不需要 subagent 来回倒手。
 
+> **Shell 安全**：Bash 工具的工作目录跨调用持久（`cd` 不会自动重置）。关键操作（archiver.py、文件写入）必须使用**绝对路径**，或在命令前先 `cd /Users/xiesh/writing/web-analysis` 重置。见问题 5（文件错写到深层嵌套路径）。
+
 #### Subagent 采集
 
 当用户在做别的事时，启动 subagent 后台执行。其余情况使用 inline。
@@ -285,6 +287,7 @@ Subagent 的完整指令见 `references/subagent-prompt.md`。使用时替换其
 - **description**: 简短描述如 "采集 {url 或标题}"
 - Cookie 处理：subagent 可以 Read .env 文件读取已存储的 Cookie
 - 工具选择：遵循 **L1 脚本 → L2 本地 Playwright 脚本 → L3 MCP 浏览器** 的优先级。L3 是最后手段，不是默认选项。Subagent 同样必须遵守此铁律
+- **MCP 浏览器并发限制**：L3 采集**同一时间只允许一个 subagent 执行**。如果多个链接都需要 L3，必须串行排队，等前一个完成再启动下一个。L1/L2 不受此限制
 - 图片 OCR：采集到的图片如需提取文字，使用 `ocr_text.py`，不要现场用其他方式处理
 - 图片分析和字段生成：subagent 具备 Claude 能力，可以直接完成
 - **错误反馈**：任何失败（采集失败、安装失败、需要用户交互）都必须**返回明确的错误信息和建议方案**给主会话，禁止静默卡住。
