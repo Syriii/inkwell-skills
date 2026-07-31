@@ -53,7 +53,7 @@ python .claude/skills/inkwell-capture/scripts/web_fetch_full.py "{url}"
 **重试规则**：任何需要重试的失败场景，最多重试 **2 次**。达到 2 次上限后**必须停止并汇报给用户**，由用户决定：(1) 继续重试 (2) 换方案 (3) 放弃采集。禁止无限重试。
 | **Cloudflare/人机验证** | 识别到验证页面 → 返回错误，建议使用 `--wait-for interaction` 让用户手动完成验证 |
 | **页面内容为空（疑似反爬）** | 检测到空内容 → 返回错误，说明疑似反爬，提供手动复制方案 |
-| **Playwright 未安装/浏览器下载失败** | 返回错误，说明"建议使用 MCP Playwright fallback"，交给主会话处理 |
+| **Playwright 未安装/浏览器下载失败** | 返回错误：「本地 Playwright 不可用。是否降级到 MCP 浏览器？（注意：MCP 浏览器需串行，不可并发）」 |
 | **网站改版/选择器失效** | 脚本解析失败 → 返回错误，提示需要更新选择器，建议手动提取 |
 | **其他错误（内容过短）** | 自动降级到 web_fetch_full.py → 仍失败则返回错误 + 手动方案建议 |
 
@@ -97,6 +97,15 @@ python inkwell-skills/inkwell-search/scripts/searcher.py search --granularity do
 如果脚本输出的 images 数组非空：
 - 1-2 张 → 自动下载到 archived/YYYYMMDD/{slug}/images/
 - 3+ 张 → 报告数量，不自动下载（由主会话决定）
+
+### 4.5 评论图片 OCR 检测
+
+检查 images 数组中 `source` 字段以 `reply_` 开头的图片：
+
+- 无回复图片 → 跳过
+- 有回复图片 → 返回结果时附注：`🖼 检测到 N 张评论图片（回复 #X, #Y …），是否需要 OCR 提取其中文字？`
+
+> 主帖图片（`source: "op"`）自动 OCR，不询问。评论图片价值参差不齐，交给用户决定。
 
 ### 5. 生成理解字段
 
