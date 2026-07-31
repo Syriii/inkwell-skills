@@ -22,6 +22,16 @@ Bash, Read, Write, Edit, Grep, Glob
 
 根据采集类型选择脚本，在 {project_root} 目录下执行。
 
+**工具选择铁律：脚本优先。MCP 浏览器只在脚本明确搞不定时使用。**
+
+| 分层 | 工具 | 适用 |
+|------|------|------|
+| **L1** | `web_fetch.py` / `forum_scraper.py` (requests) | **所有场景首选** |
+| **L2** | `web_fetch_full.py` (local Playwright) | L1 失败、需要 JS 渲染。**独立浏览器进程，并发安全** |
+| **L3** | **MCP Playwright 浏览器** | **仅** L1 + L2 都失败时才用。**使用 MCP 浏览器的采集必须串行执行，禁止并发** |
+
+> L2 和 L3 都基于 Playwright，渲染效果相同。区别在于运行方式：L2 是独立进程（隔离、并发安全），L3 是共享浏览器实例（需要你已登录的 session）。**MCP 浏览器是兜底，不是默认。**
+
 **普通网页 (webpage)**:
 ```
 python .claude/skills/inkwell-capture/scripts/web_fetch.py "{url}"
