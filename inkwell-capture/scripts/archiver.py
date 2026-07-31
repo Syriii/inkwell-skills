@@ -34,6 +34,12 @@ from urllib.parse import urlparse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from utils import escape_yaml  # noqa: E402
 
+try:
+    from cookie_store import get_cookie_for_url  # noqa: E402
+except ImportError:
+    def get_cookie_for_url(url: str) -> None:  # noqa: E402
+        return None
+
 # ---------------------------------------------------------------------------
 # Slug 生成
 # ---------------------------------------------------------------------------
