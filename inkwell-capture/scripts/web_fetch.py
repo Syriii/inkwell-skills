@@ -110,6 +110,16 @@ def fetch(url: str, cookie: str | None = None, timeout: int = 30) -> dict:
     # --- 字数统计 ---
     word_count = len(re.findall(r'[一-鿿]', body))  # 中文字符
 
+    # --- 图片入 body：trafilatura 可能未内联图片（懒加载/JS渲染等），检测并自动追加 ---
+    if images and not re.search(r'!\[.*\]\(', body):
+        for i, img in enumerate(images, 1):
+            ext = img['url'].rsplit('.', 1)[-1].split('?')[0]
+            if ext not in ('jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'):
+                ext = 'jpg'
+            path = f"images/wx_{i:02d}.{ext}"
+            img['path'] = path
+            body += f"\n\n![图片{i}]({path})"
+
     return {
         "type": "webpage",
         "source": url,

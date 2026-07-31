@@ -256,7 +256,8 @@ def archive(data: dict, project_root: Path | None = None) -> dict:
     # 下载图片
     images = data.get("images", [])
     if images:
-        images = download_images(images, archive_dir / "images")
+        images = download_images(images, archive_dir / "images",
+                                 source_url=data.get("source"))
 
     # 构建 frontmatter
     data_with_images = {**data, "images": images}
