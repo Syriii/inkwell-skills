@@ -84,14 +84,23 @@ def make_slug(title: str) -> str:
 # 图片下载
 # ---------------------------------------------------------------------------
 
-def download_images(images: list[dict], target_dir: Path) -> list[dict]:
+def download_images(images: list[dict], target_dir: Path,
+                    source_url: str | None = None) -> list[dict]:
     """下载图片到目标目录，返回更新后的 images 列表。
 
     已存在文件跳过，下载失败的标记为 failed。
+
+    Args:
+        images: 图片字典列表 [{url, path, ...}]
+        target_dir: 下载目标目录
+        source_url: 来源 URL（用于根据域名查找 Cookie，如 NGA 反盗链）
     """
     import requests
 
     target_dir.mkdir(parents=True, exist_ok=True)
+
+    # 按域名查 Cookie（如 NGA img.nga.178.com 需要 Cookie 否则返回 567）
+    cookie = get_cookie_for_url(source_url) if source_url else None
 
     downloaded = []
     for img in images:
@@ -108,8 +117,8 @@ def download_images(images: list[dict], target_dir: Path) -> list[dict]:
                 downloaded.append(img)
                 continue
 
-        # 确定文件名和路径
-        filename = _filename_from_url(url)
+        # 确定文件名：优先用脚本分配的 path，没有再从 URL 提取
+        filename = os.path.basename(img.get("path", "")) or _filename_from_url(url)
         dest = target_dir / filename
 
         # 避免重名
@@ -121,13 +130,16 @@ def download_images(images: list[dict], target_dir: Path) -> list[dict]:
 
         # 下载
         try:
-            r = requests.get(url, headers={
+            headers = {
                 "User-Agent": (
                     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
                 ),
                 "Referer": url,
-            }, timeout=30)
+            }
+            if cookie:
+                headers["Cookie"] = cookie
+            r = requests.get(url, headers=headers, timeout=30)
             r.raise_for_status()
             dest.write_bytes(r.content)
             img["path"] = f"images/{dest.name}"
