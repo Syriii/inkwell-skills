@@ -52,9 +52,15 @@ style.textContent = `
 }
 .iw-panel summary::-webkit-details-marker, .iw-panel2 summary::-webkit-details-marker { display: none; }
 .iw-panel summary::before, .iw-panel2 summary::before {
-    content: '▸ ';
-    color: var(--text-faint);
+    content: '';
     display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 0.42em solid currentColor;
+    border-top: 0.3em solid transparent;
+    border-bottom: 0.3em solid transparent;
+    margin-right: 0.55em;
+    vertical-align: middle;
     transition: transform .12s;
 }
 .iw-panel details[open] > summary::before, .iw-panel2 details[open] > summary::before { transform: rotate(90deg); }
@@ -63,8 +69,8 @@ style.textContent = `
 /* 列表：日期固定右列不换行，标题可换行，整体对齐 */
 .iw-panel ul, .iw-panel2 ul {
     list-style: none;
-    margin: 4px 0 8px;
-    padding-left: 1.6em;
+    margin: 2px 0 8px;
+    padding-left: 1.1em;
 }
 .iw-panel li, .iw-panel2 li {
     display: flex;
@@ -239,9 +245,15 @@ style.textContent = `
 }
 .iw-panel summary::-webkit-details-marker, .iw-panel2 summary::-webkit-details-marker { display: none; }
 .iw-panel summary::before, .iw-panel2 summary::before {
-    content: '▸ ';
-    color: var(--text-faint);
+    content: '';
     display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 0.42em solid currentColor;
+    border-top: 0.3em solid transparent;
+    border-bottom: 0.3em solid transparent;
+    margin-right: 0.55em;
+    vertical-align: middle;
     transition: transform .12s;
 }
 .iw-panel details[open] > summary::before, .iw-panel2 details[open] > summary::before { transform: rotate(90deg); }
@@ -250,8 +262,8 @@ style.textContent = `
 /* 列表：日期固定右列不换行，标题可换行，整体对齐 */
 .iw-panel ul, .iw-panel2 ul {
     list-style: none;
-    margin: 4px 0 8px;
-    padding-left: 1.6em;
+    margin: 2px 0 8px;
+    padding-left: 1.1em;
 }
 .iw-panel li, .iw-panel2 li {
     display: flex;
