@@ -173,10 +173,10 @@ archiver.py 自动创建 archived/YYYYMMDD/{slug}/ 目录并写入 `{slug}.md`�
 > - **知乎回答/多段内容**：slug 可能需要概括"问题+回答"的完整语境，此时 slug 和 title 可以不同（如 title="拐卖人口罪消失三十年"，slug="拐卖人口罪消失三十年-中国刑法性别偏差全梳理"）
 > - archiver.py 的 `make_slug()` 对中文标题直接取中文，手动创建目录时同样遵循以上规则
 
-如果 inkwell-search 已安装，追加 FAISS 索引：
+如果 inkwell-search 已安装，重建 FAISS 索引（每次采集后必须执行，保证索引与磁盘一致；比增量追加可靠，能自动清除重命名/删除的旧条目）：
 ```bash
 cd {project_root}
-python inkwell-skills/inkwell-search/scripts/indexer.py index --path "web-analysis/archived/YYYYMMDD/{slug}/{slug}.md" --text "{title + summary + tags + body 前 500 字}"
+python .claude/skills/inkwell-search/scripts/reindex.py
 ```
 
 ### 7. 返回结果
