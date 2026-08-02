@@ -55,8 +55,8 @@ description: >
 
 ### Step 1.5: 检查 inkwell-search
 - 检查 `.claude/skills/inkwell-search/` 是否存在
-- 已安装 → 后续去重和索引走 inkwell-search
-- 未安装 → 跳过语义去重和索引追加，精确去重仍生效
+- 已安装 → 后续去重和索引走 inkwell-search；**每次采集完成必须重建索引**（`reindex.py`，见 Step 4 第 7 步）
+- 未安装 → 跳过语义去重和索引重建，精确去重仍生效
 
 ### Step 2: 识别输入类型
 
@@ -269,7 +269,7 @@ NGA 帖子可能被版主锁定或删除，页面显示「此帖子被锁定」�
 4. 生成字段（title, slug, category, tags, summary）
 5. **[硬门禁] 规范审查** — 必须逐项通过 Step 4 清单，不通过不写入。**所有采集路径（脚本/MCP浏览器/subagent）无一例外**
 6. 写入归档文件（archiver.py 或直接写 Markdown）
-7. FAISS 索引追加
+7. FAISS 索引重建 — 若 inkwell-search 已安装：`python .claude/skills/inkwell-search/scripts/reindex.py`（全量重建，自动纳入新文件、清除重命名/删除的旧条目；比增量追加可靠，**每次采集后必须执行**）
 8. 呈现结果
 
 过程中遇到问题（评论超限、Cookie 缺失）**直接在对话中确认**，不需要 subagent 来回倒手。
