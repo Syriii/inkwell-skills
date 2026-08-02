@@ -52,7 +52,14 @@ function buildItem(page) {
     li.appendChild(a);
     if (page.date) {
         const span = document.createElement('span');
-        span.textContent = `  —  ${dv.date(page.date).toFormat('yyyy-MM-dd')}`;
+        let dateStr;
+        try {
+            const d = dv.date(page.date);
+            dateStr = (d && d.isValid) ? d.toFormat('yyyy-MM-dd') : String(page.date);
+        } catch (e) {
+            dateStr = String(page.date);
+        }
+        span.textContent = `  —  ${dateStr}`;
         span.style.cssText = 'color: var(--text-faint); font-size: 0.85em;';
         li.appendChild(span);
     }
@@ -83,11 +90,8 @@ function addTab(id, label, buildPanel) {
 addTab('cat', '分类', () => {
     const div = document.createElement('div');
     const grouped = pages.groupBy(p => p.category || '未分类');
-    grouped.sort((a, b) => {
-        if (a.key === '未分类') return 1;
-        if (b.key === '未分类') return -1;
-        return a.key.localeCompare(b.key);
-    });
+    // Dataview 的 sort 只接受 key 函数（不接受比较器）；'未分类' 映射到最大字符排最后
+    grouped.sort(g => (g.key === '未分类' ? '￿' : g.key), 'asc');
     for (const g of grouped) {
         const det = document.createElement('details');
         const sum = document.createElement('summary');
@@ -183,7 +187,14 @@ function buildItem(page) {
     li.appendChild(a);
     if (page.date) {
         const span = document.createElement('span');
-        span.textContent = `  —  ${dv.date(page.date).toFormat('yyyy-MM-dd')}`;
+        let dateStr;
+        try {
+            const d = dv.date(page.date);
+            dateStr = (d && d.isValid) ? d.toFormat('yyyy-MM-dd') : String(page.date);
+        } catch (e) {
+            dateStr = String(page.date);
+        }
+        span.textContent = `  —  ${dateStr}`;
         span.style.cssText = 'color: var(--text-faint); font-size: 0.85em;';
         li.appendChild(span);
     }
