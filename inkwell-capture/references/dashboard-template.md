@@ -245,7 +245,7 @@ addTab('topics', '讨论', () => {
 addTab('pub', '创作', () => {
     const div = document.createElement('div');
     const ul = document.createElement('ul');
-    const pages = dv.pages('"creations"').sort(p => p.date, 'desc').slice(0, 10);
+    const pages = dv.pages('"creations"').where(p => p.file.frontmatter && Object.keys(p.file.frontmatter).length > 0).sort(p => p.date, 'desc').slice(0, 10);
     for (const p of pages) ul.appendChild(buildItem(p));
     div.appendChild(ul);
     return div;
