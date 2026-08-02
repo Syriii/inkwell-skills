@@ -215,6 +215,11 @@ NGA 帖子可能被版主锁定或删除，页面显示「此帖子被锁定」�
 | L2 | `web_fetch_full.py` (local Playwright) | 正文 + 全部评论 + 图片 | — |
 | L3 | MCP Playwright 浏览器 | 正文 + 全部评论 + 图片 | —（并发不安全，仅 L2 失败时用） |
 
+**⚠️ `/t/` 自动跳转陷阱（2026-08 发现）**：`/t/{id}` 页面渲染后约 2-3 秒会**自动跳转到更新的帖子**，L1/L2/MCP 浏览器都可能采到跳转后的一篇（串帖、source 与内容不符）。**可靠做法**：
+- 正文图片 → **SSR 原始 HTML**（`curl` 带浏览器 UA 直接抓，不经 JS 渲染）
+- 评论 → **`https://jandan.net/api/tucao/all/{id}` API**（需带浏览器 UA/Referer，curl 默认头可能返回 `data:null`）
+- 采集后必须核对作者名与 source ID 一致（作者名在 SSR HTML 中，与帖子一一对应）
+
 **执行规则**：
 - 只需正文和图片 → L1 即可
 - 需要评论区 → L1 失败后走 **L2 `web_fetch_full.py`**（local Playwright，独立进程，并发安全）
