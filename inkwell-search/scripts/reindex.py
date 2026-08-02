@@ -97,8 +97,10 @@ def main() -> None:
         tmp = f.name
 
     indexer = Path(__file__).resolve().parent / "indexer.py"
+    # 模型已本地缓存（WEB_ANALYSIS_MODELS_DIR），HF_HUB_OFFLINE 避免联网检查卡死
+    env = {**os.environ, "HF_HUB_OFFLINE": "1"}
     r = subprocess.run([sys.executable, str(indexer), "rebuild", "--data", tmp],
-                       capture_output=True, text=True, cwd=root)
+                       capture_output=True, text=True, cwd=root, env=env)
     os.unlink(tmp)
     if r.returncode != 0:
         sys.stderr.write(r.stderr)
