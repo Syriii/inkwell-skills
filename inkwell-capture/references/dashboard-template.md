@@ -35,6 +35,55 @@ style.textContent = `
 }
 .iw-panel { display: none; }
 .iw-panel.is-active { display: block; }
+
+/* 折叠块：覆盖 Obsidian 默认 details/summary 样式，统一箭头，去边框 */
+.iw-panel details, .iw-panel2 details {
+    margin: 2px 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+.iw-panel summary, .iw-panel2 summary {
+    cursor: pointer;
+    padding: 3px 4px;
+    border-radius: 4px;
+    list-style: none;
+    user-select: none;
+}
+.iw-panel summary::-webkit-details-marker, .iw-panel2 summary::-webkit-details-marker { display: none; }
+.iw-panel summary::before, .iw-panel2 summary::before {
+    content: '▸ ';
+    color: var(--text-faint);
+    display: inline-block;
+    transition: transform .12s;
+}
+.iw-panel details[open] > summary::before, .iw-panel2 details[open] > summary::before { transform: rotate(90deg); }
+.iw-panel summary:hover, .iw-panel2 summary:hover { background: var(--background-modifier-hover); }
+
+/* 列表：日期固定右列不换行，标题可换行，整体对齐 */
+.iw-panel ul, .iw-panel2 ul {
+    list-style: none;
+    margin: 4px 0 8px;
+    padding-left: 1.6em;
+}
+.iw-panel li, .iw-panel2 li {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 2px 0;
+    line-height: 1.5;
+}
+.iw-panel li a, .iw-panel2 li a {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-decoration: none;
+}
+.iw-panel li .iw-date, .iw-panel2 li .iw-date {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    color: var(--text-faint);
+    font-size: 0.85em;
+}
 `;
 container.appendChild(style);
 
