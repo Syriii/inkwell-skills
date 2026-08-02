@@ -67,10 +67,15 @@ style.textContent = `
 .iw-panel summary:hover, .iw-panel2 summary:hover { background: var(--background-modifier-hover); }
 
 /* 列表：日期固定右列不换行，标题可换行，整体对齐 */
-.iw-panel ul, .iw-panel2 ul {
+.iw-panel ul {
     list-style: none;
     margin: 2px 0 8px;
-    padding-left: 1.1em;
+    padding-left: 0.4em;
+}
+.iw-panel2 ul {
+    list-style: none;
+    margin: 2px 0 8px;
+    padding-left: 0;
 }
 .iw-panel li, .iw-panel2 li {
     display: flex;
@@ -260,10 +265,15 @@ style.textContent = `
 .iw-panel summary:hover, .iw-panel2 summary:hover { background: var(--background-modifier-hover); }
 
 /* 列表：日期固定右列不换行，标题可换行，整体对齐 */
-.iw-panel ul, .iw-panel2 ul {
+.iw-panel ul {
     list-style: none;
     margin: 2px 0 8px;
-    padding-left: 1.1em;
+    padding-left: 0.4em;
+}
+.iw-panel2 ul {
+    list-style: none;
+    margin: 2px 0 8px;
+    padding-left: 0;
 }
 .iw-panel li, .iw-panel2 li {
     display: flex;
