@@ -225,7 +225,7 @@ function addTab(id, label, buildPanel) {
 addTab('recent', '采集', () => {
     const div = document.createElement('div');
     const ul = document.createElement('ul');
-    const pages = dv.pages('"archived"').sort(p => p.fetched_at, 'desc').slice(0, 15);
+    const pages = dv.pages('"archived"').where(p => p.file.frontmatter && Object.keys(p.file.frontmatter).length > 0).sort(p => p.fetched_at, 'desc').slice(0, 15);
     for (const p of pages) ul.appendChild(buildItem(p));
     div.appendChild(ul);
     return div;
@@ -235,7 +235,7 @@ addTab('recent', '采集', () => {
 addTab('topics', '讨论', () => {
     const div = document.createElement('div');
     const ul = document.createElement('ul');
-    const pages = dv.pages('"discussions"').sort(p => p.date, 'desc').slice(0, 10);
+    const pages = dv.pages('"discussions"').where(p => p.file.frontmatter && Object.keys(p.file.frontmatter).length > 0).sort(p => p.date, 'desc').slice(0, 10);
     for (const p of pages) ul.appendChild(buildItem(p));
     div.appendChild(ul);
     return div;
