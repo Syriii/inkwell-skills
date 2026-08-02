@@ -21,19 +21,20 @@ description: >
 
 用户说"建索引""更新索引""索引状态""重建索引"时触发。
 
-### 建索引 / 更新索引
+### 建索引 / 更新索引（标准入口：reindex.py）
 
 ```
-python scripts/indexer.py index --path <path> --text <encodable_text>
+python .claude/skills/inkwell-search/scripts/reindex.py [--dirs archived discussions creations]
 ```
 
-增量扫描逻辑：
-- 遍历 config.json 中 `source_dirs` 的所有 .md 文件
-- 对每个文件提取文本（title + 正文）
-- 调 indexer.py 逐个增量索引
-- content_hash 没变的文件自动跳过
-- 源目录中已消失的文件自动从索引移除
-- 完成后更新 `last_indexed_at`
+全量重建（原子替换，重建期间搜索仍用旧索引，零中断）：
+- 扫描 `config.json` 中 `source_dirs` 的全部 .md（缺失时默认 archived/discussions/creations）
+- 对每个文件提取可索引文本（title + summary + tags + 正文）
+- 调 indexer.py rebuild，重命名/删除的文件自动消失，新增文件自动纳入
+- 完成后写回 `last_indexed_at`
+- **每次采集后必须执行**（inkwell-capture Step 4 第 7 步已接入）
+
+> 低层命令 `indexer.py index`（增量追加）保留给临时补索引，**不作为采集后的标准路径**——它无法清除重命名/删除文件的旧向量，会导致索引残留。
 
 ### 索引状态
 
