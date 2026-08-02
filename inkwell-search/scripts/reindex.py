@@ -115,6 +115,20 @@ def main() -> None:
 
     print(r.stdout, end="")
 
+    # 数据质量校验：日期格式 + 正文纯净度（防仪表盘 dataviewjs 报错复发）
+    # date/fetched_at 若被写成空格分隔（如 `2026-07-30 10:42`），Obsidian 的
+    # js-yaml 会解析为字符串，dv.date() 无法处理 → 总览仪表盘报错。
+    validator = Path(__file__).resolve().parent / "validate_frontmatter.py"
+    vr = subprocess.run([sys.executable, str(validator)],
+                        capture_output=True, text=True, cwd=root)
+    if vr.stdout:
+        print(vr.stdout, end="")
+    if vr.returncode != 0:
+        if vr.stderr:
+            sys.stderr.write(vr.stderr)
+        # 校验作为门禁：发现问题即返回非零，提醒先修复数据再继续
+        sys.exit(vr.returncode)
+
 
 if __name__ == "__main__":
     main()
