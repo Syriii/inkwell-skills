@@ -45,7 +45,12 @@ def fetch_html(url: str, cookie: str | None = None, timeout: int = 30) -> str:
         headers["Cookie"] = cookie
     resp = requests.get(url, headers=headers, timeout=timeout)
     resp.raise_for_status()
-    resp.encoding = resp.apparent_encoding or "utf-8"
+    enc = (resp.apparent_encoding or "utf-8").lower()
+    if enc in ("gbk", "gb2312", "gb18030"):
+        # GB18030 是 GBK/GB2312 的超集，可覆盖生僻字（如 叒/叕）。
+        # requests 的 charset 检测对 GBK 系页面常误报为 gb2312，导致生僻字乱码。
+        enc = "gb18030"
+    resp.encoding = enc
     return resp.text
 
 
