@@ -89,9 +89,12 @@ function addTab(id, label, buildPanel) {
 // 分类
 addTab('cat', '分类', () => {
     const div = document.createElement('div');
-    const grouped = pages.groupBy(p => p.category || '未分类');
-    // Dataview 的 sort 只接受 key 函数（不接受比较器）；'未分类' 映射到最大字符排最后
-    grouped.sort(g => (g.key === '未分类' ? '￿' : g.key), 'asc');
+    // Dataview 的 sort 只接受 key 函数（码点序，非拼音）；转原生数组用 localeCompare 得拼音序
+    const grouped = pages.groupBy(p => p.category || '未分类').array().sort((a, b) => {
+        if (a.key === '未分类') return 1;
+        if (b.key === '未分类') return -1;
+        return a.key.localeCompare(b.key);
+    });
     for (const g of grouped) {
         const det = document.createElement('details');
         const sum = document.createElement('summary');

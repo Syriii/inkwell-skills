@@ -33,8 +33,20 @@ python .claude/skills/inkwell-search/scripts/reindex.py [--dirs archived discuss
 - 调 indexer.py rebuild，重命名/删除的文件自动消失，新增文件自动纳入
 - 完成后写回 `last_indexed_at`
 - **每次采集后必须执行**（inkwell-capture Step 4 第 7 步已接入）
+- **重建后自动跑 frontmatter 数据质量校验**（`validate_frontmatter.py`）：
+  - `date`/`fetched_at` 必须是 YAML 日期或 ISO 格式，**禁止空格分隔**（如 `2026-07-30 10:42`）——这类值 Obsidian 的 js-yaml 解析为字符串，`dv.date()` 无法处理，会导致总览仪表盘 dataviewjs 抛错
+  - 正文不得混入第二个 frontmatter 块（源站元数据残留，违反归档纯净化）
+  - 校验失败 → reindex 返回非零，提醒先修复数据
 
 > 低层命令 `indexer.py index`（增量追加）保留给临时补索引，**不作为采集后的标准路径**——它无法清除重命名/删除文件的旧向量，会导致索引残留。
+
+### 单独校验
+
+```
+python .claude/skills/inkwell-search/scripts/validate_frontmatter.py
+```
+
+退出码 0 = 合规，1 = 发现问题。可在归档/验证后手动运行复查格式。
 
 ### 索引状态
 
