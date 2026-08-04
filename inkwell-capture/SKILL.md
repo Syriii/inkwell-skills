@@ -217,7 +217,7 @@ NGA 帖子可能被版主锁定或删除，页面显示「此帖子被锁定」�
 
 **⚠️ `/t/` 自动跳转陷阱（2026-08 发现）**：`/t/{id}` 页面渲染后约 2-3 秒会**自动跳转到更新的帖子**，L1/L2/MCP 浏览器都可能采到跳转后的一篇（串帖、source 与内容不符）。**可靠做法**：
 - 正文图片 → **SSR 原始 HTML**（`curl` 带浏览器 UA 直接抓，不经 JS 渲染）
-- 评论 → **`https://jandan.net/api/tucao/all/{id}` API**（需带浏览器 UA/Referer，curl 默认头可能返回 `data:null`）
+- 评论 → **渲染后的 DOM 提取**（2026-08-04 发现 `api/tucao/all/{id}` 已失效：对有评论的帖子也返回 `data:null`）。用 MCP 浏览器加载后 `browser_evaluate` 提取 `.comment-row`：作者/位置/时间/#N楼/评论内容/`#comment_id`/OO/XX。楼层从 `.comment-meta .right-meta` 取，评论 ID 匹配 `/^#\d{8,}$/`，回复评论保留 `@提及` 开头即可（引用的原评论已单独在列表中）
 - 采集后必须核对作者名与 source ID 一致（作者名在 SSR HTML 中，与帖子一一对应）
 
 **执行规则**：
