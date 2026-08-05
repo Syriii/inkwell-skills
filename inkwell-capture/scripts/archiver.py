@@ -128,28 +128,60 @@ def download_images(images: list[dict], target_dir: Path,
             dest = target_dir / f"{stem}_{counter}{ext}"
             counter += 1
 
-        # 下载
+        # 下载：requests 优先，失败自动降级 curl（绕过 WAF 的 TLS 指纹风控，如 NGA 图片 CDN 返回 567）
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+            ),
+            "Referer": url,
+        }
+        if cookie:
+            headers["Cookie"] = cookie
+        ok = False
         try:
-            headers = {
-                "User-Agent": (
-                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-                ),
-                "Referer": url,
-            }
-            if cookie:
-                headers["Cookie"] = cookie
             r = requests.get(url, headers=headers, timeout=30)
             r.raise_for_status()
             dest.write_bytes(r.content)
+            ok = True
+        except Exception:
+            ok = _curl_download(url, dest, source_url, cookie)
+        if ok:
             img["path"] = f"images/{dest.name}"
-        except Exception as e:
+        else:
             img["path"] = ""
-            img["download_error"] = str(e)
+            img["download_error"] = "requests 与 curl 均下载失败（可能仍被 WAF 拦截）"
 
         downloaded.append(img)
 
     return downloaded
+
+
+def _curl_download(url: str, dest: Path, source_url: str | None,
+                   cookie: str | None) -> bool:
+    """requests 被 WAF 拦截（如 NGA 图片 CDN 的 TLS 指纹风控，HTTP 567）时，
+    用 curl 重试——curl 使用真实浏览器 TLS 指纹，通常能绕过。
+
+    Returns:
+        True 表示下载成功且文件非空
+    """
+    import subprocess
+    cmd = ["curl", "-s", "-L", "--fail", "--max-time", "60", "-o", str(dest)]
+    cmd += ["-H", "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                 "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"]
+    if source_url:
+        cmd += ["-H", f"Referer: {source_url}"]
+    if cookie:
+        cmd += ["-H", f"Cookie: {cookie}"]
+    cmd.append(url)
+    try:
+        r = subprocess.run(cmd, capture_output=True, timeout=90)
+        if r.returncode == 0 and dest.exists() and dest.stat().st_size > 0:
+            return True
+    except Exception:
+        pass
+    dest.unlink(missing_ok=True)
+    return False
 
 
 def _filename_from_url(url: str) -> str:
