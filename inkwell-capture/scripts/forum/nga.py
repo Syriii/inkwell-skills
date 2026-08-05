@@ -89,13 +89,17 @@ def extract_tid_from_url(url: str) -> str:
 # 图片提取
 # ---------------------------------------------------------------------------
 
+# NGA 图片 CDN 主机 —— 以页面 JS `__ATTACH_BASE_VIEW` 为准（曾为 img.nga.178.com，现为 img.nga.cn）
+NGA_IMG_BASE = 'https://img.nga.cn/attachments/'
+
+
 def extract_nga_images(text: str) -> list[str]:
     """从文本中提取 [img]...[/img] 标签内的图片 URL 并规范化去重。
 
     URL 规范化规则：
-      - ./ 开头的相对路径 → https://img.nga.178.com/attachments/ + 去掉 ./ 前缀
+      - ./ 开头的相对路径 → {NGA_IMG_BASE} + 去掉 ./ 前缀
       - http 开头的完整 URL → 保持原样
-      - 其他相对路径 → https://img.nga.178.com/attachments/ + 路径
+      - 其他相对路径 → {NGA_IMG_BASE} + 路径
     """
     urls = []
     seen: set[str] = set()
@@ -105,9 +109,9 @@ def extract_nga_images(text: str) -> list[str]:
             continue
         # URL 规范化
         if url.startswith('./'):
-            url = 'https://img.nga.178.com/attachments/' + url[2:]
+            url = NGA_IMG_BASE + url[2:]
         elif not url.startswith('http'):
-            url = 'https://img.nga.178.com/attachments/' + url
+            url = NGA_IMG_BASE + url
         # else: http 开头的保持原样
         if url not in seen:
             seen.add(url)
