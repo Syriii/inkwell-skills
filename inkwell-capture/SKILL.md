@@ -171,16 +171,18 @@ archived/YYYYMMDD/{回答标题-slug}/
 2. **全问题** (`/question/{id}`)：
 ```
 archived/YYYYMMDD/{问题名称-slug}/
-├── {问题名称-slug}.md          # 问题总览（type: zhihu_question，dashboard 唯一入口）
-├── {回答1标题-slug}.md         # 回答正文（无 frontmatter，纯 Markdown）
-├── {回答2标题-slug}.md         # 回答正文
-├── ...
+├── {问题名称-slug}.md          # 问题总览（type: zhihu_question，唯一顶层入口）
+├── 回答/                       # 回答正文（无 frontmatter，纯 Markdown）
+│   ├── {回答1标题-slug}.md
+│   ├── {回答2标题-slug}.md
+│   └── ...
 └── images/                     # 所有回答的图片共用
 ```
 - `问题名称-slug` 从问题标题生成
 - 每个回答的 `{slug}` 由模型根据该回答内容总结，**必须为中文**
 - **回答 `.md` 不写 frontmatter**——只有问题总览 `{问题名称-slug}.md` 有完整 frontmatter
-- 问题总览中通过 wikilink `[[{回答slug}]]` 导航到各回答
+- **回答文件放在 `回答/` 子目录**，问题总览是目录下唯一顶层 .md（清晰入口，避免 20+ 回答文件平铺淹没入口）
+- 问题总览中通过 wikilink `[[{回答slug}]]` 导航到各回答（Obsidian 按文件名解析，子目录内仍有效）
 - 下载图片统一放在 `images/`，回答正文中直接用 `images/xxx.jpg` 引用
 - 评论区上限由 `comment_limit` 控制（默认 500 条），超过时先询问用户
 

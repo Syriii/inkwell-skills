@@ -149,14 +149,16 @@ def main() -> None:
         "",
     ]
 
-    # 回答文件
+    # 回答文件 → 回答/ 子目录（让问题总览成为唯一顶层入口）
+    ansdir = base / "回答"
+    ansdir.mkdir(exist_ok=True)
     top = sorted(answers, key=lambda a: a.get("rank", 99))[: args.top_n]
     for a in top:
         rank = a["rank"]
         meta_i = metad.get(a.get("idx"), {})
         slug = slug_map.get(rank) or a.get("slug") or f"回答{rank}"
         body = build_answer_file(a, meta_i, imgdir, args.qid)
-        (base / f"{slug}.md").write_text(body, encoding="utf-8")
+        (ansdir / f"{slug}.md").write_text(body, encoding="utf-8")
         preview = re.sub(r'\s+', ' ', a.get("content", ""))[:60]
         overview.append(f"- [[{slug}]] — {a.get('author', '匿名')}：{preview}")
 
