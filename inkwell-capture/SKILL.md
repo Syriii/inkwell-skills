@@ -212,7 +212,7 @@ NGA 帖子可能被版主锁定或删除，页面显示「此帖子被锁定」�
 - **立即停止采集**，不要重试（跟 Cookie 或网络无关，换任何方式都看不到）
 - 返回明确错误给用户：「帖子已被锁定或删除，无法采集：[url]」
 
-**NGA 图片反盗链**：NGA 图片 CDN 对 Python `requests` 的 TLS fingerprint 会返回 567 错误。降级方案：`curl` + Cookie + Referer 头。
+**NGA 图片反盗链**：NGA 图片 CDN 对 Python `requests` 的 TLS fingerprint 会返回 567 错误。archiver.py 已内置自动降级：requests 下载失败时自动改用 `curl` + Cookie + Referer 头重试（2026-08 起）。
 
 #### 煎蛋 (jandan.net)
 

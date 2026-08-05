@@ -3,9 +3,11 @@
 
 把浏览器提取的知乎回答数据（JSON）写成「知乎采集模型」规定的多文件结构：
   archived/YYYYMMDD/{问题-slug}/
-  ├── {问题-slug}.md          # 问题总览（frontmatter + wikilink 导航）
-  ├── {回答1-slug}.md         # 回答正文（无 frontmatter，纯 Markdown）
-  ├── {回答2-slug}.md
+  ├── {问题-slug}.md          # 问题总览（frontmatter + wikilink 导航，唯一顶层入口）
+  ├── 回答/                   # 回答正文（无 frontmatter，纯 Markdown）
+  │   ├── {回答1-slug}.md
+  │   ├── {回答2-slug}.md
+  │   └── ...
   └── images/                 # 回答内嵌图片
 
 用法（在项目根执行）：
