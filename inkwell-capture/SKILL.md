@@ -184,6 +184,22 @@ archived/YYYYMMDD/{问题名称-slug}/
 - 下载图片统一放在 `images/`，回答正文中直接用 `images/xxx.jpg` 引用
 - 评论区上限由 `comment_limit` 控制（默认 500 条），超过时先询问用户
 
+**全问题采集执行（L3 浏览器 + zhihu_writer.py）**：
+
+1. **浏览**：`browser_navigate` 打开 `/question/{id}`
+2. **加载回答**：`browser_run_code_unsafe` 用鼠标滚轮增量滚动（`page.mouse.wheel`；`window.scrollTo/scrollBy` 可能不触发知乎无限滚动）
+3. **提取**：`browser_evaluate` 提取回答 + 元数据，用 `filename` 参数存到 `.playwright-mcp/*.json`（避免大量文本进上下文）：
+   - 回答：`.List-item` → `.VoteButton` aria-label「赞同 N」、`.AuthorInfo-name`、`.RichContent-inner` 正文、`data-original` 全图
+   - 元数据：回答总数（「N 个回答」）、每个回答 `/answer/` 链接与「发布于/编辑于」日期、`.QuestionRichText` 问题描述
+4. **slug**：为前 N 高赞回答各写一个中文 slug（模型根据内容总结）
+5. **写入**：
+   ```
+   python .claude/skills/inkwell-capture/scripts/zhihu_writer.py \
+       --qid {id} --title {标题} --answers {answers.json} --meta {meta.json} \
+       --category {分类} --tags {标签} --desc {描述} --slugs {slugs.json}
+   ```
+   自动生成问题总览 + N 个回答文件 + 下载内嵌图片。若用户只要「仅问题总览」→ 不调 zhihu_writer
+
 #### NGA (bbs.nga.cn)
 
 **URL 模式**：`/read.php?tid={数字}` — 论坛帖子。
