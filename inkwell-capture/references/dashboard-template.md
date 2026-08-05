@@ -110,14 +110,16 @@ function buildItem(page) {
         app.workspace.openLinkText(page.file.path, '', false);
     });
     li.appendChild(a);
-    if (page.date) {
+    // 显示 fetch 时间（采集入库时间），无则回退发布日期
+    const itemTime = page.fetched_at || page.date;
+    if (itemTime) {
         const span = document.createElement('span');
         let dateStr;
         try {
-            const d = dv.date(page.date);
-            dateStr = (d && d.isValid) ? d.toFormat('yyyy-MM-dd') : String(page.date);
+            const d = dv.date(itemTime);
+            dateStr = (d && d.isValid) ? d.toFormat('yyyy-MM-dd') : String(itemTime);
         } catch (e) {
-            dateStr = String(page.date);
+            dateStr = String(itemTime);
         }
         span.className = 'iw-date';
         span.textContent = `  —  ${dateStr}`;
@@ -308,14 +310,16 @@ function buildItem(page) {
         app.workspace.openLinkText(page.file.path, '', false);
     });
     li.appendChild(a);
-    if (page.date) {
+    // 显示 fetch 时间（采集入库时间），无则回退发布日期
+    const itemTime = page.fetched_at || page.date;
+    if (itemTime) {
         const span = document.createElement('span');
         let dateStr;
         try {
-            const d = dv.date(page.date);
-            dateStr = (d && d.isValid) ? d.toFormat('yyyy-MM-dd') : String(page.date);
+            const d = dv.date(itemTime);
+            dateStr = (d && d.isValid) ? d.toFormat('yyyy-MM-dd') : String(itemTime);
         } catch (e) {
-            dateStr = String(page.date);
+            dateStr = String(itemTime);
         }
         span.className = 'iw-date';
         span.textContent = `  —  ${dateStr}`;
