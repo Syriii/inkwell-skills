@@ -5,7 +5,7 @@
 ## 内容库
 
 ```dataviewjs
-const pages = dv.pages('"archived"').where(p => p.file.frontmatter && Object.keys(p.file.frontmatter).length > 0).sort(p => p.date, 'desc');
+const pages = dv.pages('"archived"').where(p => p.file.frontmatter && Object.keys(p.file.frontmatter).length > 0).sort(p => p.fetched_at || p.date, 'desc');
 const container = dv.container;
 container.innerHTML = '';
 
