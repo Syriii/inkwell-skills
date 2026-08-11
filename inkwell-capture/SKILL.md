@@ -131,6 +131,7 @@ description: >
 > L2 是独立浏览器进程（隔离、并发安全）；L3 使用宿主提供的已登录会话。L3 是兜底，不是默认，具体映射见[宿主兼容说明](references/host-compatibility.md)。
 >
 > NGA 帖子优先使用 `forum_scraper.py` + Cookie；误用共享浏览器容易造成重复采集和内容错乱。
+> 煎蛋 `/t/{id}` 使用 `jandan_capture.py`；该入口在一次运行中合并静态主帖与 L2 动态评论，并输出完整性字段。只有它明确返回不完整或浏览器失败时才进入 L3。
 
 根据用户意图选择执行方式：
 
@@ -147,7 +148,7 @@ description: >
 
 主会话直接执行：
 
-1. 运行采集脚本（web_fetch.py / web_fetch_full.py / forum_scraper.py）
+1. 运行采集脚本（web_fetch.py / web_fetch_full.py / forum_scraper.py；煎蛋 `/t/` 使用 jandan_capture.py）
    或通过已登录浏览器提取数据
 2. 去重检查
 3. 图片下载
@@ -231,6 +232,19 @@ Subagent 完成后，将结果展示给用户。
   "body": "# 标题\n\n正文...",
   "word_count": 3500,
   "images": [{"url": "https://...", "path": "images/..."}]
+}
+```
+
+站点专用入口可附加确定性完整性契约。不得仅依据退出码判断内容完整；`completeness.complete=false` 时禁止归档并按 `capture.needs_rendered_page` 升级层级：
+
+```json
+{
+  "source_id": "6192383",
+  "source_verified": true,
+  "comment_count": 10,
+  "comments": [],
+  "completeness": {"source": true, "post": true, "comments": true, "complete": true},
+  "capture": {"level": "L2", "needs_rendered_page": false, "warnings": []}
 }
 ```
 

@@ -7,6 +7,7 @@
   - NGA（bbs.nga.cn）        → forum/nga.py
   - V2EX（www.v2ex.com）     → forum/v2ex.py
   - 贴吧（tieba.baidu.com）   → forum/tieba.py
+  - 煎蛋（jandan.net）        → forum/jandan.py（L1 主帖；完整评论用 jandan_capture.py）
   - 通用论坛（自动检测常见选择器）
 
 用法：

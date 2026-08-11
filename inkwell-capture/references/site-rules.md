@@ -82,16 +82,25 @@ archived/YYYYMMDD/{问题名称-slug}/
 | `/t/{id}` | 树洞 | OP + 动态评论，图片常是内容主体 |
 | `/p/{id}` | 文章 | 长文 + 评论，服务端渲染 |
 
-采集层级：L1 `forum_scraper.py` → L2 `web_fetch_full.py` → L3 已登录浏览器。共享 L3 会话必须串行。
+`/t/{id}` 使用专用入口，由脚本在一次运行中完成静态主帖与 L2 动态评论合并：
 
-`/t/{id}` 渲染后可能自动跳到新帖子：
+```bash
+python <skill-dir>/scripts/jandan_capture.py --url "https://jandan.net/t/{id}"
+```
 
-- 正文图片从 SSR 原始 HTML 获取，避免 JS 跳转；
-- 评论从渲染后 DOM 的 `.comment-row` 提取；
-- 采集后核对作者与 source ID 一致。
+需要直接归档时，由宿主模型生成语义字段后在同一命令提供 `--project-root`、`--title`、`--category`、`--tags` 和 `--summary`。脚本检测到相同 source 时会停止，由用户决定跳过或覆盖。
+
+`/t/{id}` 渲染后可能自动跳到新帖子。专用入口会执行以下确定性检查：
+
+- 正文与正文图片只从 SSR 原始 HTML 的 `.post-content` 获取；
+- 评论只接受同时具有 `.floor` 和 `.comment-id` 的 `.comment-row`，排除热门区重复项；
+- 评论图片只接受 `.comment-content img`，不扫描头像和界面资源；
+- 核对最终 URL、页面 source ID，以及静态/渲染页面作者；不一致时拒绝合并；
+- `comment_count` 只取实际评论数组长度，不从通用页面元素推测。
 
 执行规则：
 
-- 只要正文与图片使用 L1；需要评论时 L1 失败再用 L2；L3 仅作兜底。
+- 只要正文与图片时可加 `--no-render`；需要评论时使用默认 L1+L2 合并模式；只有专用入口失败或返回不完整时才用 L3。
+- `completeness.complete=false` 时禁止归档，不得把“脚本退出成功”当作内容完整。
 - 图片含文字时使用 OCR，并将结果附在图片下方。
 - 标题禁止使用“煎蛋无聊图 + ID”前缀；用内容型中文标题，源站 ID 留在 `source`，正文注明来源编号。
