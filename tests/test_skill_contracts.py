@@ -11,6 +11,11 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VALIDATOR = REPO_ROOT / "scripts" / "validate-skills.py"
 SKILLS = ("inkwell-capture", "inkwell-search", "inkwell-write")
+TRIGGER_TERMS = {
+    "inkwell-capture": ("存档", "采集", "截图OCR"),
+    "inkwell-search": ("语义搜索", "索引", "相似度"),
+    "inkwell-write": ("讨论", "创作", "写文章"),
+}
 
 
 def run_validator(root: Path, skill: str | None = None) -> subprocess.CompletedProcess[str]:
@@ -34,17 +39,35 @@ class SkillContractTests(unittest.TestCase):
         result = run_validator(REPO_ROOT)
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_each_skill_validates_when_installed_alone(self) -> None:
+    def test_each_skill_validates_in_both_host_layouts_when_installed_alone(self) -> None:
         for skill in SKILLS:
-            with self.subTest(skill=skill), tempfile.TemporaryDirectory() as temp_dir:
-                root = Path(temp_dir)
-                self.copy_one_skill(root, skill)
-                result = run_validator(root, skill)
-                self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertEqual(
-                    sorted(path.name for path in root.iterdir()),
-                    [skill],
-                )
+            for host in ("codex", "claude"):
+                with (
+                    self.subTest(skill=skill, host=host),
+                    tempfile.TemporaryDirectory() as temp_dir,
+                ):
+                    base = Path(temp_dir)
+                    root = (
+                        base / "codex-home" / "skills"
+                        if host == "codex"
+                        else base / "project" / ".claude" / "skills"
+                    )
+                    root.mkdir(parents=True)
+                    self.copy_one_skill(root, skill)
+                    result = run_validator(root, skill)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(
+                        sorted(path.name for path in root.iterdir()),
+                        [skill],
+                    )
+
+    def test_trigger_descriptions_cover_independent_entry_points(self) -> None:
+        for skill, terms in TRIGGER_TERMS.items():
+            with self.subTest(skill=skill):
+                text = (REPO_ROOT / skill / "SKILL.md").read_text(encoding="utf-8")
+                frontmatter = text.split("---", 2)[1]
+                for term in terms:
+                    self.assertIn(term, frontmatter)
 
     def test_direct_sibling_reference_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
