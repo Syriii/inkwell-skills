@@ -11,7 +11,7 @@ type: discussion
 category: 科技
 tags: [AI政策, 科技法规]
 based_on:
-  - archived/20260301/eu-ai-act/article.md
+  - notes/eu-ai-act/article.md
 ---
 ```
 
@@ -28,7 +28,7 @@ type: summary
 category: 科技
 tags: [AI政策, 科技法规, 欧盟]
 based_on:
-  - archived/20260301/eu-ai-act/article.md
+  - notes/eu-ai-act/article.md
 rounds: 3
 ---
 ```
@@ -98,7 +98,7 @@ category: 科技
 version: 1
 tags: [AI政策, 科技治理]
 based_on:
-  - archived/20260301/eu-ai-act/article.md
+  - notes/eu-ai-act/article.md
 word_count: 2800
 ---
 ```

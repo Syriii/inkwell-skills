@@ -105,13 +105,13 @@ grep -rl "source: {url}" archived/
 1. **title** — 文章标题（脚本已提取则优先使用）
 2. **category** — 粗粒度分类。先扫描已有分类作为参考：
    ```bash
-   grep -rh "^category:" archived/ discussions/ 2>/dev/null | sort | uniq -c | sort -rn | head -20
+   grep -rh "^category:" archived/ 2>/dev/null | sort | uniq -c | sort -rn | head -20
    ```
    如无历史分类，从以下默认分类中选择最匹配的一个：**社会、科技、政治、经济、文化、教育、生活、娱乐、健康、体育**。
    论坛帖子注意：脚本输出的 body 中可能包含版块名（如 NGA 帖子顶部有版块路径），优先据此推断 category。
 3. **tags** — 中文标签为主，每标签 2-4 字，至少 2 个，最多 5 个。禁止纯英文标签（如 `health`），但中文标签内含英文缩写可接受（如 `ED治疗`）。先扫描已有标签作为参考：
    ```bash
-   grep -rh "tags:" archived/ discussions/ 2>/dev/null | tr ',' '\n' | sort | uniq -c | sort -rn | head -30
+   grep -rh "tags:" archived/ 2>/dev/null | tr ',' '\n' | sort | uniq -c | sort -rn | head -30
    ```
 4. **summary** — 1-2 句中文内容摘要
 

@@ -358,38 +358,6 @@ addTab('recent', '采集', () => {
     return div;
 });
 
-// 讨论 —— 只显示讨论总结（type: summary），过滤 rounds/ 过程文件和 references
-addTab('topics', '讨论', () => {
-    const div = document.createElement('div');
-    const ul = document.createElement('ul');
-    const pages = dv.pages('"discussions"').where(p => p.file.frontmatter && Object.keys(p.file.frontmatter).length > 0 && p.type === 'summary').sort(p => p.date, 'desc').slice(0, 10);
-    if (pages.length === 0) {
-        const span = document.createElement('span');
-        span.style.color = 'var(--text-faint)';
-        span.textContent = '（暂无讨论总结）';
-        div.appendChild(span);
-    }
-    for (const p of pages) ul.appendChild(buildItem(p));
-    div.appendChild(ul);
-    return div;
-});
-
-// 创作 —— 只显示定稿（type: article，creations/{slug}/{slug}.md），过滤 outline 和 drafts/
-addTab('pub', '创作', () => {
-    const div = document.createElement('div');
-    const ul = document.createElement('ul');
-    const pages = dv.pages('"creations"').where(p => p.file.frontmatter && Object.keys(p.file.frontmatter).length > 0 && p.type === 'article').sort(p => p.date, 'desc').slice(0, 10);
-    if (pages.length === 0) {
-        const span = document.createElement('span');
-        span.style.color = 'var(--text-faint)';
-        span.textContent = '（暂无定稿）';
-        div.appendChild(span);
-    }
-    for (const p of pages) ul.appendChild(buildItem(p));
-    div.appendChild(ul);
-    return div;
-});
-
 tabBar.firstChild.classList.add('is-active');
 panels['recent'].classList.add('is-active');
 

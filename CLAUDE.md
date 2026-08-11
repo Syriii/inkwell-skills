@@ -2,53 +2,50 @@
 
 ## 项目概述
 
-Inkwell 是三个独立、可组合的 Claude Code 技能，覆盖内容工作流：**采集 → 搜索 → 写作**。
+Inkwell 是同时支持 Codex 与 Claude Code 的三个独立、自包含技能：
 
-- `inkwell-capture/` — 网页采集、爬虫、截图 OCR、图片分析，归档为 Markdown
-- `inkwell-search/` — 语义搜索、向量索引（FAISS），通用文档检索
-- `inkwell-write/` — AI 辅助讨论 + 文章创作，自动关联历史素材
+- `inkwell-capture/` — 获取、清洗并归档 URL、文件、截图或媒体。
+- `inkwell-search/` — 为用户指定的 Markdown 目录建立语义索引并搜索或比较文本。
+- `inkwell-write/` — 从主题或任意用户材料开展讨论、提纲规划和版本化创作。
 
-日常内容工作（采集、分析、创作）在 `~/writing/web-analysis/` 进行。使用过程中发现的 Skill 改进在此仓库同步和版本管理。
+它们不是必须串联的管线。任何技能目录都不得发现、安装、调用或要求另一个 Inkwell 技能，也不得假设另一个技能的业务目录存在。组合只能由用户或上层工作流通过普通文件和明确路径完成。
 
 ## 目录结构
 
-```
+```text
 inkwell-skills/
 ├── README.md
 ├── CLAUDE.md
-├── .gitignore
-├── docs/
-│   └── specs/                 ← Skill 设计文档
-│       ├── 2026-07-16-collection-subsystem-design.md
-│       ├── 2026-07-20-retrieval-skill-design.md
-│       └── 2026-07-20-discuss-create-skill-design.md
-├── plan/                      ← Skill 开发规划
-│   ├── task_plan.md           ← 架构、阶段、决策
-│   ├── findings.md            ← 技术选型、设计决策
-│   └── progress.md            ← 开发进展日志
-├── inkwell-capture/           ← clip (剪藏) Skill
-│   ├── SKILL.md
-│   ├── scripts/
-│   └── references/
-├── inkwell-search/            ← thread (牵丝) Skill
-│   ├── SKILL.md
-│   ├── scripts/
-│   └── references/
-└── inkwell-write/             ← forge (熔裁) Skill
-    ├── SKILL.md
-    ├── scripts/
-    └── references/
+├── docs/interop.md
+├── scripts/validate-skills.py
+├── tests/test_skill_contracts.py
+├── inkwell-capture/
+├── inkwell-search/
+└── inkwell-write/
 ```
+
+每个技能目录包含自己的 `SKILL.md`、`agents/openai.yaml` 和所需的 `scripts/`、`references/`。不要新增跨技能共享运行目录。
+
+## 开发规则
+
+1. 保持每个 `SKILL.md` 的 frontmatter 只有 `name` 和 `description`。
+2. 路径以当前技能目录和内容项目根为运行时变量，不硬编码 `.claude/skills`、`.codex/skills`、用户名或机器路径。
+3. 技能目录内禁止出现其他 Inkwell 技能名、路径占位符或对方业务目录。
+4. 新增脚本必须实际运行；修改后至少执行：
+
+   ```bash
+   python3 scripts/validate-skills.py
+   python3 -m unittest discover -s tests -v
+   ```
+
+5. 三个技能必须分别在“只安装自身”的目录形态下通过验证。
+6. 提交前运行 `git diff --check`，不要提交 `__pycache__`、模型、索引或内容项目产物。
 
 ## 分支策略
 
-```
-master   ← 稳定发布版本（只接受来自 develop 的合并）
-  ↑
-develop  ← 日常开发分支（所有改动先提交到这里）
-```
-
-日常开发在 `develop` 分支，版本稳定后合并到 `master` 并打 tag。
+- `develop`：日常开发与验证通过的本地提交。
+- `master`：稳定发布版本，只接受来自 `develop` 的合并。
+- 未经用户明确要求不 push。
 
 ## 仓库
 

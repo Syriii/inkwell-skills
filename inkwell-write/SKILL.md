@@ -190,7 +190,7 @@ python <skill-dir>/scripts/discussion_writer.py write-summary \
 
 ### 引用维护
 
-`references.md` 是讨论的素材库存清单，**搜索注入时自动建立**。讨论过程中发现新素材时手动追加：
+`references.md` 是讨论的素材库存清单，首次记录材料时建立。讨论过程中发现新素材时继续追加：
 
 ```bash
 python <skill-dir>/scripts/references_builder.py update \
@@ -199,9 +199,9 @@ python <skill-dir>/scripts/references_builder.py update \
 ```
 
 支持格式：
-- 本地文件：`archived/.../腹泻归寒炎症归热/腹泻归寒炎症归热.md|迦太基盐业：腹泻归寒|> 原文摘要`
+- 本地文件：`notes/腹泻归寒炎症归热.md|迦太基盐业：腹泻归寒|> 原文摘要`
 - 外部 URL：`https://...|中医四气五味理论|> 从《神农本草经》到现代药理研究`
-- 整目录：`archived/20260728/为什么中医里说骨髓.../|知乎全问题目录|> 20个高赞回答`
+- 整目录：`materials/为什么中医里说骨髓.../|知乎全问题目录|> 20个高赞回答`
 
 批量追加：
 ```bash

@@ -19,3 +19,6 @@ Thumbs.db
 !example*.yaml
 !example*.yml
 !*/agents/openai.yaml
+!.github/
+!.github/workflows/
+!.github/workflows/*.yml

@@ -401,9 +401,6 @@ domain_delays:
 comment_limit: 500
 forum_domains: []
 inbox_cleanup: keep_dir   # keep_dir | remove_dir — 处理完后只清文件还是删整个目录
-publish:
-  hugo_root: ""
-  obsidian_root: ""
 ```
 
 ## 目录结构
