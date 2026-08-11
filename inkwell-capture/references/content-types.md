@@ -18,11 +18,12 @@
 ## 截图（文字类）
 
 - **识别**: .png/.jpg 文件 + 用户确认"文字类"
-- **L1**: `ocr_text.py` — PaddleOCR + KenLM 质量评估
+- **L1**: `ocr_text.py` — 普通图 PaddleOCR/Tesseract；长图优先 Tesseract 内存分段 + KenLM 质量评估
 - **L2**: Surya（PaddleOCR 质量差时建议）
 - **L3**: Claude Code 视觉分析（Surya 失败时）
-- **输出**: type=screenshot_ocr, 提取的文本 + 质量评分
+- **输出**: type=screenshot_ocr, 提取的文本 + 质量评分；长图附带分段范围、置信度和状态
 - **原始图**: 保存到 images/ 并在 frontmatter 记录路径
+- **安全门禁**: 仅 `ocr_quality.safe_for_verbatim=true` 可作为逐字文本；否则保留原图并人工复核
 
 ## 截图（图片类）
 

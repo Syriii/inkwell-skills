@@ -18,8 +18,8 @@ web_fetch_full.py (Playwright 渲染)
 ## OCR 降级链
 
 ```
-ocr_text.py (PaddleOCR)
-  错误: PaddleOCR 未安装 / 未检测到文字 / 质量= poor
+ocr_text.py (普通图 PaddleOCR/Tesseract；长图 Tesseract 内存分段)
+  错误: OCR 引擎未安装 / 未检测到文字 / 分段失败 / safe_for_verbatim=false
     ↓ 建议降级
 Surya (更强但需 PyTorch)
   错误: Surya 未安装 / 识别失败
@@ -27,6 +27,9 @@ Surya (更强但需 PyTorch)
 Claude Code 视觉分析（在对话中看图提取文字）
   限制: 需要多模态模型支持
 ```
+
+长图分段不会写入临时切片文件。任一分段失败时，整体结果最高只能为 `degraded`，并输出
+`safe_for_verbatim=false` 与 `handling=preserve_original_and_review`；此时 OCR 文本只能辅助检索和理解，不能替代原图。
 
 ## 论坛抓取
 
