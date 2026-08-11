@@ -9,12 +9,11 @@
 **采集类型**: {webpage / forum / image-ocr}
 **Cookie 来源**: {从 .env 读取 / 无}
 **工作目录**: {project_root}
-**inkwell-search 状态**: {已安装 / 未安装}
 **配置**: .web-analysis.yaml → crawl_delay={delay}, comment_limit={limit}
 
-## 可用工具
+## 所需能力
 
-Bash, Read, Write, Edit, Grep, Glob
+命令执行、文件读取与写入、文本搜索；仅在脚本失败且宿主已授权时使用浏览器能力。
 
 ## 执行流程
 
@@ -22,15 +21,15 @@ Bash, Read, Write, Edit, Grep, Glob
 
 根据采集类型选择脚本，在 {project_root} 目录下执行。
 
-**工具选择铁律：脚本优先。MCP 浏览器只在脚本明确搞不定时使用。**
+**工具选择铁律：脚本优先。已登录浏览器只在脚本明确搞不定时使用。**
 
 | 分层 | 工具 | 适用 |
 |------|------|------|
 | **L1** | `web_fetch.py` / `forum_scraper.py` (requests) | **所有场景首选** |
 | **L2** | `web_fetch_full.py` (local Playwright) | L1 失败、需要 JS 渲染。**独立浏览器进程，并发安全** |
-| **L3** | **MCP Playwright 浏览器** | **仅** L1 + L2 都失败时才用。**使用 MCP 浏览器的采集必须串行执行，禁止并发** |
+| **L3** | **宿主提供的已登录浏览器** | **仅** L1 + L2 都失败时才用。**共享浏览器会话必须串行执行，禁止并发** |
 
-> L2 和 L3 都基于 Playwright，渲染效果相同。区别在于运行方式：L2 是独立进程（隔离、并发安全），L3 是共享浏览器实例（需要你已登录的 session）。**MCP 浏览器是兜底，不是默认。**
+> L2 是独立浏览器进程（隔离、并发安全），L3 是宿主提供的共享已登录会话。**已登录浏览器是兜底，不是默认。**
 
 **普通网页 (webpage)**:
 ```
@@ -53,7 +52,7 @@ python <skill-dir>/scripts/web_fetch_full.py "{url}"
 **重试规则**：任何需要重试的失败场景，最多重试 **2 次**。达到 2 次上限后**必须停止并汇报给用户**，由用户决定：(1) 继续重试 (2) 换方案 (3) 放弃采集。禁止无限重试。
 | **Cloudflare/人机验证** | 识别到验证页面 → 返回错误，建议使用 `--wait-for interaction` 让用户手动完成验证 |
 | **页面内容为空（疑似反爬）** | 检测到空内容 → 返回错误，说明疑似反爬，提供手动复制方案 |
-| **Playwright 未安装/浏览器下载失败** | 返回错误：「本地 Playwright 不可用。是否降级到 MCP 浏览器？（注意：MCP 浏览器需串行，不可并发）」 |
+| **Playwright 未安装/浏览器下载失败** | 返回错误：「本地 Playwright 不可用。是否降级到已登录浏览器？（注意：共享会话需串行，不可并发）」 |
 | **网站改版/选择器失效** | 脚本解析失败 → 返回错误，提示需要更新选择器，建议手动提取 |
 | **其他错误（内容过短）** | 自动降级到 web_fetch_full.py → 仍失败则返回错误 + 手动方案建议 |
 
@@ -83,14 +82,6 @@ grep -rl "source: {url}" archived/
 ```
 - 匹配到 → 返回 "⚠️ 链接已于 YYYY-MM-DD 采集过 (archived/.../)。请主会话决定：覆盖 / 跳过？"
 - 未匹配 → 继续
-
-**语义去重**（仅 inkwell-search 已安装时）：
-```bash
-cd {project_root}
-python inkwell-skills/inkwell-search/scripts/searcher.py search --granularity doc --top-k 1 --threshold 0.95 --query "{title + summary}"
-```
-- 相似度 ≥ 0.95 → 返回 "⚠️ 发现高度相似内容：[path]，相似度 {score}。请主会话决定是否仍然归档。"
-- 语义去重不阻塞归档，仅作提示
 
 ### 4. 图片下载
 
@@ -172,12 +163,6 @@ archiver.py 自动创建 archived/YYYYMMDD/{slug}/ 目录并写入 `{slug}.md`�
 > - **单篇文章/帖子**：slug 默认等于 title，无需区分
 > - **知乎回答/多段内容**：slug 可能需要概括"问题+回答"的完整语境，此时 slug 和 title 可以不同（如 title="拐卖人口罪消失三十年"，slug="拐卖人口罪消失三十年-中国刑法性别偏差全梳理"）
 > - archiver.py 的 `make_slug()` 对中文标题直接取中文，手动创建目录时同样遵循以上规则
-
-如果 inkwell-search 已安装，重建 FAISS 索引（每次采集后必须执行，保证索引与磁盘一致；比增量追加可靠，能自动清除重命名/删除的旧条目）：
-```bash
-cd {project_root}
-python <search-skill-dir>/scripts/reindex.py
-```
 
 ### 7. 返回结果
 

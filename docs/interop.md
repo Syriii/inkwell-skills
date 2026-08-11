@@ -1,36 +1,25 @@
-# Inkwell 技能间互操作约定
+# Inkwell 文件互操作约定
 
-四个技能通过以下方式协作：
+三个技能彼此独立、自包含。任何技能都不得发现、安装、调用或要求另一个技能；组合能力只来自普通文件和用户明确提供的路径。
 
-## 目录约定
+## 独立能力
 
-| 目录 | 读写技能 |
-|------|---------|
-| `archived/` | capture 写，search 索引，write 读取 |
-| `topics/` | write 读写，search 索引 |
-| `published/` | write 写 |
-| `.retrieval-index/` | search 管理 |
+| 技能 | 输入 | 输出 | 独立成功条件 |
+|------|------|------|--------------|
+| `inkwell-capture` | URL、本地文件、截图或媒体 | `archived/` 下的结构化 Markdown 与本地资源 | 不借助索引或写作能力完成归档与校验 |
+| `inkwell-search` | 用户指定的文档目录、查询或两段文本 | `.retrieval-index/` 与结构化检索/比较结果 | 不假设业务目录或文档来源完成索引和搜索 |
+| `inkwell-write` | 主题、文本、文件、链接或已有讨论记录 | `discussions/`、`creations/` 下的讨论、引用、提纲和版本化文章 | 不要求知识库或采集工具即可完成讨论与创作 |
 
-## 技能间调用
+## 自然组合
 
-- **capture → search**: 采集后追加 FAISS 索引
-- **capture → write**: 采集完成后衔接讨论
-- **write → search**: 讨论/创作前搜索相关素材
+- 归档结果是普通 Markdown，用户可以将其路径交给任何文本工具。
+- 检索工具可以索引任意 Markdown 目录，不关心文件由谁产生。
+- 写作工具可以读取任意用户指定的文本或 Markdown，不关心材料由谁产生。
+- 是否把某个输出交给另一个工具，由用户或上层工作流决定；技能本身不得自动衔接。
 
-## 命名约定
+## 路径契约
 
-| 本地 skill 名 | inkwell-skills 包名 |
-|--------------|-------------------|
-| clip | inkwell-capture |
-| thread | inkwell-search |
-| forge | inkwell-write |
-| post | inkwell-publish |
-
-## 路径引用
-
-Skill 内部引用其他 skill 的脚本时使用相对路径：
-```
-.claude/skills/{skill-name}/scripts/{script}.py
-```
-
-项目相关路径使用 `{project_root}` 占位符，由执行时的工作目录确定。
+- `<skill-dir>`：当前技能自己的 `SKILL.md` 所在目录。
+- `<project-root>`：当前任务的数据项目根目录。
+- 技能内部只能调用 `<skill-dir>/scripts/` 下自己的脚本。
+- 禁止硬编码 `.claude/skills`、`.codex/skills`、用户名或机器绝对路径。

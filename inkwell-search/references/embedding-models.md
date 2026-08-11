@@ -8,7 +8,7 @@
 - **最大输入**: ~512 token
 - **语言**: 中文优化，支持英文
 - **性能**: CPU 友好，个人规模无压力
-- **适用场景**: 默认推荐，所有 Skill 共用
+- **适用场景**: 默认推荐，适合个人规模文档检索
 
 ## 备选模型
 
@@ -40,8 +40,8 @@
 
 1. 修改 `.retrieval-index/config.json` 中的 `embedding_model`
 2. 或修改项目 `.env` 中的 `EMBEDDING_MODEL`
-3. 重建索引：`python scripts/indexer.py rebuild --data <(构建好的数据)`
+3. 重建索引：`python <skill-dir>/scripts/reindex.py`
 
 ## 模型存放
 
-所有模型缓存到 `<models-dir>/embedding/`，由 sentence-transformers 自动管理。
+模型由 sentence-transformers/Hugging Face 缓存管理；缓存根目录解析为 `<models-dir>`，不要假设固定子目录或机器路径。

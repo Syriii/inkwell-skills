@@ -18,3 +18,4 @@ Thumbs.db
 *.yml
 !example*.yaml
 !example*.yml
+!*/agents/openai.yaml

@@ -1,4 +1,4 @@
 interface:
   display_name: "Inkwell 熔裁"
-  short_description: "基于历史素材开展多轮讨论、结构化分析、提纲规划和文章创作"
-  default_prompt: "使用 $inkwell-write 基于已有素材讨论这个主题并准备文章。"
+  short_description: "围绕主题或任意材料开展讨论、结构分析、提纲规划和版本化文章创作"
+  default_prompt: "使用 $inkwell-write 围绕这个主题或我提供的材料展开讨论并准备文章。"

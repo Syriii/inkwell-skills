@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""重建索引 —— 采集后的标准索引维护入口。
+"""重建索引 —— 通用文档目录的标准索引维护入口。
 
 扫描内容目录下全部 .md → 提取可索引文本（title + summary + tags + 正文）→
 调 indexer.py rebuild 全量原子重建。保证索引与磁盘文件严格一致：
@@ -8,19 +8,16 @@
 用法（在项目根目录执行）：
     python <skill-dir>/scripts/reindex.py
 
-可用 --dirs 覆盖默认内容目录（默认: archived discussions creations）。
+使用 --dirs 指定内容目录，或读取 config.json 的 source_dirs。
 """
 
 import argparse
 import json
-import os
 import re
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
-
-DEFAULT_DIRS = ["archived", "discussions", "creations"]
 
 # 项目根 = 最近的 .retrieval-index 所在目录（与 indexer.py 的 CWD 约定一致）
 def find_project_root(start: Path) -> Path:
@@ -31,7 +28,7 @@ def find_project_root(start: Path) -> Path:
 
 
 def extract_text(p: Path) -> str:
-    """从归档文件提取可索引文本：title + summary + tags + 正文。"""
+    """从 Markdown 提取可索引文本：常见元数据字段 + 正文。"""
     text = p.read_text(encoding="utf-8")
     fm, body = "", text
     if text.startswith("---"):
@@ -77,7 +74,12 @@ def main() -> None:
 
     root = find_project_root(Path.cwd())
     cfg = load_config(root)
-    dirs = args.dirs or cfg.get("source_dirs") or DEFAULT_DIRS
+    dirs = args.dirs or cfg.get("source_dirs") or []
+    if not dirs:
+        print(json.dumps({
+            "error": "no source directories configured; pass --dirs or set source_dirs in .retrieval-index/config.json"
+        }, ensure_ascii=False))
+        sys.exit(2)
     data: list[list[str]] = []
     for d in dirs:
         base = root / d
@@ -97,11 +99,15 @@ def main() -> None:
         tmp = f.name
 
     indexer = Path(__file__).resolve().parent / "indexer.py"
-    # 模型已本地缓存（WEB_ANALYSIS_MODELS_DIR），HF_HUB_OFFLINE 避免联网检查卡死
-    env = {**os.environ, "HF_HUB_OFFLINE": "1"}
-    r = subprocess.run([sys.executable, str(indexer), "rebuild", "--data", tmp],
-                       capture_output=True, text=True, cwd=root, env=env)
-    os.unlink(tmp)
+    try:
+        r = subprocess.run(
+            [sys.executable, str(indexer), "rebuild", "--data", tmp],
+            capture_output=True,
+            text=True,
+            cwd=root,
+        )
+    finally:
+        Path(tmp).unlink(missing_ok=True)
     if r.returncode != 0:
         sys.stderr.write(r.stderr)
         sys.exit(r.returncode)
@@ -114,21 +120,6 @@ def main() -> None:
     save_config(root, cfg)
 
     print(r.stdout, end="")
-
-    # 数据质量校验：日期格式 + 正文纯净度（防仪表盘 dataviewjs 报错复发）
-    # date/fetched_at 若被写成空格分隔（如 `2026-07-30 10:42`），Obsidian 的
-    # js-yaml 会解析为字符串，dv.date() 无法处理 → 总览仪表盘报错。
-    validator = Path(__file__).resolve().parent / "validate_frontmatter.py"
-    vr = subprocess.run([sys.executable, str(validator)],
-                        capture_output=True, text=True, cwd=root)
-    if vr.stdout:
-        print(vr.stdout, end="")
-    if vr.returncode != 0:
-        if vr.stderr:
-            sys.stderr.write(vr.stderr)
-        # 校验作为门禁：发现问题即返回非零，提醒先修复数据再继续
-        sys.exit(vr.returncode)
-
 
 if __name__ == "__main__":
     main()

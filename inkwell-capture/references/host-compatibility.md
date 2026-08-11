@@ -6,7 +6,6 @@
 
 - `<skill-dir>`：当前 `inkwell-capture/SKILL.md` 的父目录。
 - `<project-root>`：包含 `.web-analysis.yaml` 或内容目录的当前项目根。
-- `<search-skill-dir>`：由宿主技能发现机制定位到的 `inkwell-search` 目录。
 - 不要把 `.claude/skills`、`.codex/skills`、用户名或机器绝对路径写进归档、命令模板或脚本。
 
 ## 能力映射

@@ -4,17 +4,22 @@ description: >
   Inkwell 剪藏技能。当用户发送链接、要求保存/存档/采集网页内容、收集论坛帖子、截图OCR时触发。
   即使用户没用「采集」这个词（如「帮我把这篇存下来」「这个页面归档一下」），
   只要意图是保存网页内容为 Markdown，就应该触发此技能。
-  如果对话在讨论技能开发或代码问题，留在本技能；内容采集完成后可衔接 inkwell-write 讨论。
 ---
 
 # inkwell-capture — 剪藏
 
 接收用户提供的链接/文件，自动识别类型，**先评估再采集**，调用独立脚本处理，输出归档 Markdown 到 `archived/` 目录。
 
+## 独立能力边界
+
+- **输入**：URL、本地文件、截图或媒体文件。
+- **输出**：结构化 Markdown、必要的本地图片与明确的采集结果报告。
+- **成功条件**：归档文件和资源完整写入，并通过本技能的写入前规范审查。
+- **边界**：只负责获取、清洗、归档和校验内容；不维护外部索引，不启动后续分析或创作流程。
+
 ## 运行时约定
 
 - 将当前 `SKILL.md` 所在目录解析为 `<skill-dir>`，将当前内容项目根目录解析为 `<project-root>`；不要假设技能安装在 `.claude`、`.codex` 或任何固定绝对路径。
-- 需要 inkwell-search 时，通过当前宿主的技能发现机制定位它，并将其目录解析为 `<search-skill-dir>`；找不到时跳过语义去重和索引，不影响基础采集。
 - 使用视觉、已登录浏览器或并行代理前，先读取 [宿主兼容说明](references/host-compatibility.md)，按 Codex/Claude Code 当前可用能力选择实现并遵守宿主权限策略。
 
 ## 初始化
@@ -24,7 +29,7 @@ description: >
 1. 检查 `.web-analysis.yaml` 是否存在
 2. 不存在 → 创建目录结构 + 写入默认配置：
    ```
-   mkdir -p archived published inbox
+   mkdir -p archived inbox
    ```
    写入 `.web-analysis.yaml`：
    ```yaml
@@ -34,21 +39,16 @@ description: >
    comment_limit: 500
    forum_domains: []
    inbox_cleanup: keep_dir
-   publish:
-     hugo_root: ""
-     obsidian_root: ""
    ```
 3. **检查 Python 依赖**：
-   - 读取 `scripts/requirements.txt`，对比已安装的包
+   - 读取 `<skill-dir>/scripts/requirements.txt`，对比已安装的包
    - 缺少核心依赖时提示用户：
      ```
      pip install -r <skill-dir>/scripts/requirements.txt
      ```
    - OCR 依赖（Pillow、pytesseract）为可选，需要时才提示安装
    - 遵循**安装铁律**：任何 pip/brew/apt 命令执行前必须征得用户同意
-4. 询问 Hugo/Obsidian 路径（可跳过）
-5. 通过宿主技能发现机制检查 inkwell-search 是否已安装，并解析 `<search-skill-dir>`
-6. 创建 `总览.md`（Obsidian Dataview 仪表盘）：
+4. 创建 `总览.md`（Obsidian Dataview 仪表盘，可选）：
    - 检查项目根目录是否存在 `总览.md`
    - 不存在 → 从 `<skill-dir>/references/dashboard-template.md` 复制到 `总览.md`
    - 提醒用户：需要安装 Obsidian Dataview 插件，在阅读模式（`Cmd+E`）下使用
@@ -58,11 +58,6 @@ description: >
 ### Step 1: 检查初始化
 - `.web-analysis.yaml` 存在 → 继续
 - 不存在 → 执行初始化
-
-### Step 1.5: 检查 inkwell-search
-- 通过宿主技能发现机制定位 inkwell-search；定位成功后解析 `<search-skill-dir>`
-- 已安装 → 后续去重和索引走 inkwell-search；**每次采集完成必须重建索引**（`reindex.py`，见 Step 4 第 7 步）
-- 未安装 → 跳过语义去重和索引重建，精确去重仍生效
 
 ### Step 2: 识别输入类型
 
@@ -298,8 +293,7 @@ NGA 帖子可能被版主锁定或删除，页面显示「此帖子被锁定」�
 4. 生成字段（title, slug, category, tags, summary）
 5. **[硬门禁] 规范审查** — 必须逐项通过 Step 4 清单，不通过不写入。**所有采集路径（脚本/已登录浏览器/委派代理）无一例外**
 6. 写入归档文件（archiver.py 或直接写 Markdown）
-7. FAISS 索引重建 — 若 inkwell-search 已安装：`python <search-skill-dir>/scripts/reindex.py`（全量重建，自动纳入新文件、清除重命名/删除的旧条目；比增量追加可靠，**每次采集后必须执行**）
-8. 呈现结果
+7. 呈现结果
 
 过程中遇到问题（评论超限、Cookie 缺失）**直接在对话中确认**，不要让委派代理代替主会话做用户确认。
 
@@ -311,7 +305,7 @@ NGA 帖子可能被版主锁定或删除，页面显示「此帖子被锁定」�
 
 #### Subagent Prompt 模板
 
-委派代理的完整指令见 `references/subagent-prompt.md`。使用时替换其中的 `{url}`, `{采集类型}`, `{inkwell-search 状态}` 等占位符，将完整内容作为 prompt 传入。
+委派代理的完整指令见 `references/subagent-prompt.md`。使用时替换其中的 `{url}`、`{采集类型}`、`{project_root}` 等占位符，将完整内容作为 prompt 传入。
 
 #### Subagent 配置
 
@@ -337,7 +331,7 @@ NGA 帖子可能被版主锁定或删除，页面显示「此帖子被锁定」�
 | 3 | **category** | 不为空，不为「未分类」，中文 | 英文 category 破坏 Dataview 分组一致性 | ❌ `lifestyle` → ✅ `生活` |
 | 4 | **tags** | 中文为主，每标签 2-4 字，禁止纯英文 | 英文标签在 Obsidian 图谱中与其他中文标签脱节 | ❌ `[health, marriage]` → ✅ `[男性健康, 婚姻]` |
 | 5 | **title** | 中文为主（英文缩写可接受），禁止纯英文 | Wave/Obsidian 按标题排序时，中英混杂排序混乱 | ❌ `My ED Clinic Visit` |
-| 6 | **summary** | 1-2 句中文，禁止纯英文 | 搜索索引依赖 summary 的语义质量 | ❌ `A man visited ED clinic...` |
+| 6 | **summary** | 1-2 句中文，禁止纯英文 | 便于后续浏览、筛选和复用归档内容 | ❌ `A man visited ED clinic...` |
 | 7 | **body 图片** | 无 `data:image/` URI 引用残留 | 破坏 Wave 等 Markdown 渲染器 | ❌ `![](data:image/svg+xml;utf8,<svg)` |
 | 8 | **目录名** | 与 slug 一致 | 不一致时引用路径断裂 | — |
 
@@ -346,8 +340,6 @@ NGA 帖子可能被版主锁定或删除，页面显示「此帖子被锁定」�
 Subagent 完成后，将结果展示给用户。
 
 - **成功** → 显示归档摘要
-  - 如果用户之前明确要求讨论内容 → 自动衔接 inkwell-write
-  - 如果用户目的不明确 → 询问"要讨论这篇内容吗？"，确认后再衔接
 - **失败** → 显示错误信息和建议方案，**等待用户指示下一步**（不能跳过询问直接重试）
 - **多个待确认事项** → **逐个确认**，一次只问一个问题。例如委派代理返回了"需要 Cookie"和"评论超限"两个问题，先确认 Cookie，解决后再确认评论数。不要批量呈现。
 - **批量采集** → 汇总所有代理或 inline 任务的结果，报告成功/失败数量
@@ -359,8 +351,6 @@ Subagent 完成后，将结果展示给用户。
    📁 archived/YYYYMMDD/{slug}/
    🏷 {category} | {tags}
    📝 {summary}
-
-要讨论这篇吗？（衔接 inkwell-write）
 ``` |
 
 ## 脚本接口约定
