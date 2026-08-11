@@ -16,9 +16,9 @@ import json
 import sys
 from pathlib import Path
 
+from sentence_transformers import SentenceTransformer
 import faiss
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
 # ---------------------------------------------------------------------------
 # 路径约定
@@ -104,8 +104,16 @@ def get_model() -> SentenceTransformer:
     global _model
     if _model is None:
         model_name = _load_model_name()
-        _model = SentenceTransformer(model_name)
+        _model = _load_sentence_transformer(model_name)
     return _model
+
+
+def _load_sentence_transformer(model_name: str) -> SentenceTransformer:
+    """优先使用本地缓存，缺失时才允许 sentence-transformers 联网下载。"""
+    try:
+        return SentenceTransformer(model_name, local_files_only=True)
+    except OSError:
+        return SentenceTransformer(model_name)
 
 
 def _load_model_name() -> str:

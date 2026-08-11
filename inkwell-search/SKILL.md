@@ -11,6 +11,12 @@ description: >
 
 通用的语义索引和搜索工具。保持**纯粹**——知道"文档"和"向量"，不知道业务字段（tags、category、title 等）。
 
+## 运行时约定
+
+- 将当前 `SKILL.md` 所在目录解析为 `<skill-dir>`，将当前项目根解析为 `<project-root>`；所有命令从 `<project-root>` 执行。
+- 将模型缓存目录解析为 `<models-dir>`：优先读取项目环境配置，未配置时使用 sentence-transformers 默认缓存；不要硬编码用户名或机器路径。
+- 本技能不依赖 Codex 或 Claude Code 的专属工具，两个宿主调用同一组 Python 脚本。
+
 ## 首次使用
 
 1. 检查项目根是否有 `.retrieval-index/config.json`
@@ -24,7 +30,7 @@ description: >
 ### 建索引 / 更新索引（标准入口：reindex.py）
 
 ```
-python .claude/skills/inkwell-search/scripts/reindex.py [--dirs archived discussions creations]
+python <skill-dir>/scripts/reindex.py [--dirs archived discussions creations]
 ```
 
 全量重建（原子替换，重建期间搜索仍用旧索引，零中断）：
@@ -43,7 +49,7 @@ python .claude/skills/inkwell-search/scripts/reindex.py [--dirs archived discuss
 ### 单独校验
 
 ```
-python .claude/skills/inkwell-search/scripts/validate_frontmatter.py
+python <skill-dir>/scripts/validate_frontmatter.py
 ```
 
 退出码 0 = 合规，1 = 发现问题。可在归档/验证后手动运行复查格式。
@@ -122,14 +128,14 @@ python scripts/searcher.py compare --text-a "<text>" --text-b "<text>" [--strate
 ## 模型
 
 - 默认 `BAAI/bge-small-zh-v1.5`（~100MB，CPU 友好，中文优化）
-- 首次运行时 sentence-transformers 自动下载到 `/Users/xiesh/Codes/models/`
+- 优先使用 `<models-dir>/` 中的本地缓存；缓存缺失时 sentence-transformers 才自动下载
 - 换模型：修改 config.json 或项目 `.env` 中的 `EMBEDDING_MODEL`，然后重建索引
 
 ## 故障排查
 
 ### 模型下载失败
 
-检查网络连接，然后手动下载模型到 `/Users/xiesh/Codes/models/`，模型名称见 `.retrieval-index/config.json` 中的 `embedding_model` 字段。
+检查网络连接，然后手动下载模型到 `<models-dir>/`，模型名称见 `.retrieval-index/config.json` 中的 `embedding_model` 字段。
 
 ### FAISS 索引损坏
 
@@ -153,7 +159,7 @@ python scripts/indexer.py rebuild --data <json_file>
 │   ├── config.json
 │   ├── doc.index / doc_map.json
 │   └── chunk.index / chunk_map.json
-└── .claude/skills/inkwell-search/    ← Skill 本身
+└── <skill-dir>/            ← Skill 本身（实际位于宿主发现的技能目录）
     ├── SKILL.md
     ├── scripts/
     │   ├── indexer.py

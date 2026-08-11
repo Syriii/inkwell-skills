@@ -34,11 +34,11 @@ Bash, Read, Write, Edit, Grep, Glob
 
 **普通网页 (webpage)**:
 ```
-python .claude/skills/inkwell-capture/scripts/web_fetch.py "{url}"
+python <skill-dir>/scripts/web_fetch.py "{url}"
 ```
 失败时自动降级：
 ```
-python .claude/skills/inkwell-capture/scripts/web_fetch_full.py "{url}"
+python <skill-dir>/scripts/web_fetch_full.py "{url}"
 ```
 
 **系统化降级与错误处理**：
@@ -59,7 +59,7 @@ python .claude/skills/inkwell-capture/scripts/web_fetch_full.py "{url}"
 
 **论坛帖子 (forum)**:
 ```
-python .claude/skills/inkwell-capture/scripts/forum_scraper.py "{url}"
+python <skill-dir>/scripts/forum_scraper.py "{url}"
 ```
 - 采集前先检测评论总数 → 如果预估评论数 > comment_limit → 返回给主会话，询问用户："检测到约 N 条评论，超过限制 {comment_limit}。是否：(1)继续采集（截断到限制）/ (2)提高评论限制 / (3)只采集主帖不采评论"
 
@@ -163,7 +163,7 @@ python inkwell-skills/inkwell-search/scripts/searcher.py search --granularity do
 调用 archiver.py：
 ```bash
 cd {project_root}
-python .claude/skills/inkwell-capture/scripts/archiver.py --json '<json>'
+python <skill-dir>/scripts/archiver.py --json '<json>'
 ```
 
 archiver.py 自动创建 archived/YYYYMMDD/{slug}/ 目录并写入 `{slug}.md`。
@@ -176,7 +176,7 @@ archiver.py 自动创建 archived/YYYYMMDD/{slug}/ 目录并写入 `{slug}.md`�
 如果 inkwell-search 已安装，重建 FAISS 索引（每次采集后必须执行，保证索引与磁盘一致；比增量追加可靠，能自动清除重命名/删除的旧条目）：
 ```bash
 cd {project_root}
-python .claude/skills/inkwell-search/scripts/reindex.py
+python <search-skill-dir>/scripts/reindex.py
 ```
 
 ### 7. 返回结果

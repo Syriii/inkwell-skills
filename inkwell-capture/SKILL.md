@@ -11,6 +11,12 @@ description: >
 
 接收用户提供的链接/文件，自动识别类型，**先评估再采集**，调用独立脚本处理，输出归档 Markdown 到 `archived/` 目录。
 
+## 运行时约定
+
+- 将当前 `SKILL.md` 所在目录解析为 `<skill-dir>`，将当前内容项目根目录解析为 `<project-root>`；不要假设技能安装在 `.claude`、`.codex` 或任何固定绝对路径。
+- 需要 inkwell-search 时，通过当前宿主的技能发现机制定位它，并将其目录解析为 `<search-skill-dir>`；找不到时跳过语义去重和索引，不影响基础采集。
+- 使用视觉、已登录浏览器或并行代理前，先读取 [宿主兼容说明](references/host-compatibility.md)，按 Codex/Claude Code 当前可用能力选择实现并遵守宿主权限策略。
+
 ## 初始化
 
 首次触发时检查项目初始化：
@@ -36,15 +42,15 @@ description: >
    - 读取 `scripts/requirements.txt`，对比已安装的包
    - 缺少核心依赖时提示用户：
      ```
-     pip install -r .claude/skills/inkwell-capture/scripts/requirements.txt
+     pip install -r <skill-dir>/scripts/requirements.txt
      ```
    - OCR 依赖（Pillow、pytesseract）为可选，需要时才提示安装
    - 遵循**安装铁律**：任何 pip/brew/apt 命令执行前必须征得用户同意
 4. 询问 Hugo/Obsidian 路径（可跳过）
-5. 检查 inkwell-search 是否已安装（可选，`ls .claude/skills/inkwell-search/`）
+5. 通过宿主技能发现机制检查 inkwell-search 是否已安装，并解析 `<search-skill-dir>`
 6. 创建 `总览.md`（Obsidian Dataview 仪表盘）：
    - 检查项目根目录是否存在 `总览.md`
-   - 不存在 → 从 `.claude/skills/inkwell-capture/references/dashboard-template.md` 复制到 `总览.md`
+   - 不存在 → 从 `<skill-dir>/references/dashboard-template.md` 复制到 `总览.md`
    - 提醒用户：需要安装 Obsidian Dataview 插件，在阅读模式（`Cmd+E`）下使用
 
 ## 执行流程
@@ -54,7 +60,7 @@ description: >
 - 不存在 → 执行初始化
 
 ### Step 1.5: 检查 inkwell-search
-- 检查 `.claude/skills/inkwell-search/` 是否存在
+- 通过宿主技能发现机制定位 inkwell-search；定位成功后解析 `<search-skill-dir>`
 - 已安装 → 后续去重和索引走 inkwell-search；**每次采集完成必须重建索引**（`reindex.py`，见 Step 4 第 7 步）
 - 未安装 → 跳过语义去重和索引重建，精确去重仍生效
 
@@ -76,7 +82,7 @@ description: >
 > **流程铁律**：任何需要用户确认/选择的问题，提出后**必须等待用户回答**才能继续。没有用户回答，绝对不能推进到下一步。
 > **提问原则**：当采集过程中有多个待确认事项时，**逐个确认**，一次只问一个问题。带用户逐个解决完后再推进到下一步。不要一次性抛出多个问题让用户评估。
 > **安装铁律**：任何 `brew install`、`pip install`、`apt` 等系统级或项目级安装命令，执行前**必须征得用户明确同意**。告知：(1) 要装什么、它是干什么的 (2) 为什么当前场景需要它 (3) 大概多大。禁止未经同意自动安装。
-> **文件存放铁律**：采集过程中产生的所有文件（截图、临时文件、下载图片、中间产物）**必须**存放到 `archived/YYYYMMDD/{slug}/images/` 或对应的归档目录内。**绝对禁止**将任何采集产物存放到项目根目录。使用 `browser_take_screenshot` 时必须指定 `filename` 参数指向归档目录。采集完成后必须检查项目根目录，确认无遗漏文件。
+> **文件存放铁律**：采集过程中产生的所有文件（截图、临时文件、下载图片、中间产物）**必须**存放到 `archived/YYYYMMDD/{slug}/images/` 或对应的归档目录内。**绝对禁止**将任何采集产物存放到项目根目录。浏览器截图必须明确保存到归档目录。采集完成后必须检查项目根目录，确认无遗漏文件。
 
 ### inbox 入口（媒体文件中转）
 
@@ -95,8 +101,8 @@ description: >
    - 用户确认合并 → OCR 后合并为一份文档归档；确认分开 → 逐张独立处理
 5. **确认处理方式**：「需要：(1) 提取文字/OCR (2) 视觉分析理解 (3) 两者都要？」
 6. **逐文件处理**：
-   - 图片 → `Read` 工具视觉分析，或 `ocr_text.py` 提取文字
-   - 视频 → `Read` 工具逐帧分析（Claude 只能处理视频的关键帧，如需完整逐帧分析需用户提前用 ffmpeg 拆帧）
+   - 图片 → 使用宿主视觉能力分析，或用 `ocr_text.py` 提取文字
+   - 视频 → 使用宿主视觉能力分析关键帧；如需完整逐帧分析，先让用户用 ffmpeg 拆帧
    - 混合时按文件类型自动匹配处理方式
 7. **汇总结果**：呈现分析结果，询问是否需要归档为 Markdown
 8. **归档（可选）**：如果用户要保存分析结果：
@@ -152,9 +158,9 @@ description: >
 |------|------|------|
 | L1 | `web_fetch.py` (requests + trafilatura) | 403，反爬拦截 |
 | L2 | `web_fetch_full.py` (Playwright + Cookie) | 40362 错误码，异常访问限制 |
-| L3 | **MCP 浏览器** (真实 Chrome + 已登录 session) | ✅ 正常访问，可滚动加载 |
+| L3 | **已登录浏览器** | ✅ 正常访问，可滚动加载 |
 
-> 知乎采集需走 **MCP 浏览器 L3**。使用 `browser_navigate` 打开链接，`browser_evaluate` 滚动加载更多内容，再 `browser_evaluate` 提取回答数据。
+> 知乎采集通常需要 **L3 已登录浏览器**。按[宿主兼容说明](references/host-compatibility.md)选择浏览器能力，完成导航、增量滚动和 DOM 提取。
 
 **目录结构模板**：
 
@@ -186,17 +192,17 @@ archived/YYYYMMDD/{问题名称-slug}/
 - 下载图片统一放在 `images/`，回答正文中直接用 `images/xxx.jpg` 引用
 - 评论区上限由 `comment_limit` 控制（默认 500 条），超过时先询问用户
 
-**全问题采集执行（L3 浏览器 + zhihu_writer.py）**：
+**全问题采集执行（L3 已登录浏览器 + zhihu_writer.py）**：
 
-1. **浏览**：`browser_navigate` 打开 `/question/{id}`
-2. **加载回答**：`browser_run_code_unsafe` 用鼠标滚轮增量滚动（`page.mouse.wheel`；`window.scrollTo/scrollBy` 可能不触发知乎无限滚动）
-3. **提取**：`browser_evaluate` 提取回答 + 元数据，用 `filename` 参数存到 `.playwright-mcp/*.json`（避免大量文本进上下文）：
+1. **浏览**：用宿主已登录浏览器打开 `/question/{id}`
+2. **加载回答**：用真实滚轮事件增量滚动；`window.scrollTo/scrollBy` 可能不触发知乎无限滚动
+3. **提取**：在页面上下文提取回答和元数据，保存到目标归档目录内的临时 JSON（避免大量文本进入上下文），写入完成后删除临时 JSON：
    - 回答：`.List-item` → `.VoteButton` aria-label「赞同 N」、`.AuthorInfo-name`、`.RichContent-inner` 正文、`data-original` 全图
    - 元数据：回答总数（「N 个回答」）、每个回答 `/answer/` 链接与「发布于/编辑于」日期、`.QuestionRichText` 问题描述
 4. **slug**：为前 N 高赞回答各写一个中文 slug（模型根据内容总结）
 5. **写入**：
    ```
-   python .claude/skills/inkwell-capture/scripts/zhihu_writer.py \
+   python <skill-dir>/scripts/zhihu_writer.py \
        --qid {id} --title {标题} --answers {answers.json} --meta {meta.json} \
        --category {分类} --tags {标签} --desc {描述} --slugs {slugs.json}
    ```
@@ -231,17 +237,17 @@ NGA 帖子可能被版主锁定或删除，页面显示「此帖子被锁定」�
 |------|------|--------|--------|
 | L1 | `forum_scraper.py` 通用处理器 | OP 正文（服务端渲染） | 评论区（JS 动态加载） |
 | L2 | `web_fetch_full.py` (local Playwright) | 正文 + 全部评论 + 图片 | — |
-| L3 | MCP Playwright 浏览器 | 正文 + 全部评论 + 图片 | —（并发不安全，仅 L2 失败时用） |
+| L3 | 已登录浏览器 | 正文 + 全部评论 + 图片 | —（共享会话时仅 L2 失败后串行使用） |
 
-**⚠️ `/t/` 自动跳转陷阱（2026-08 发现）**：`/t/{id}` 页面渲染后约 2-3 秒会**自动跳转到更新的帖子**，L1/L2/MCP 浏览器都可能采到跳转后的一篇（串帖、source 与内容不符）。**可靠做法**：
+**⚠️ `/t/` 自动跳转陷阱（2026-08 发现）**：`/t/{id}` 页面渲染后约 2-3 秒会**自动跳转到更新的帖子**，L1/L2/已登录浏览器都可能采到跳转后的一篇（串帖、source 与内容不符）。**可靠做法**：
 - 正文图片 → **SSR 原始 HTML**（`curl` 带浏览器 UA 直接抓，不经 JS 渲染）
-- 评论 → **渲染后的 DOM 提取**（2026-08-04 发现 `api/tucao/all/{id}` 已失效：对有评论的帖子也返回 `data:null`）。用 MCP 浏览器加载后 `browser_evaluate` 提取 `.comment-row`：作者/位置/时间/#N楼/评论内容/`#comment_id`/OO/XX。楼层从 `.comment-meta .right-meta` 取，评论 ID 匹配 `/^#\d{8,}$/`，回复评论保留 `@提及` 开头即可（引用的原评论已单独在列表中）
+- 评论 → **渲染后的 DOM 提取**（2026-08-04 发现 `api/tucao/all/{id}` 已失效：对有评论的帖子也返回 `data:null`）。用已登录浏览器加载后在页面上下文提取 `.comment-row`：作者/位置/时间/#N楼/评论内容/`#comment_id`/OO/XX。楼层从 `.comment-meta .right-meta` 取，评论 ID 匹配 `/^#\d{8,}$/`，回复评论保留 `@提及` 开头即可（引用的原评论已单独在列表中）
 - 采集后必须核对作者名与 source ID 一致（作者名在 SSR HTML 中，与帖子一一对应）
 
 **执行规则**：
 - 只需正文和图片 → L1 即可
 - 需要评论区 → L1 失败后走 **L2 `web_fetch_full.py`**（local Playwright，独立进程，并发安全）
-- L3 MCP 浏览器仅 L2 也失败时才用（且需串行）
+- L3 已登录浏览器仅 L2 也失败时才用；共享会话必须串行
 - 图片下载：煎蛋图片无严格反盗链，Python `requests` 可直接下载
 - 图片 OCR：煎蛋树洞图片经常是用户截图投稿（聊天记录、微博截图等），图片即内容。采集时必须检查图片是否含文字，含文字的用 OCR 提取后附在图片下方
 - **标题规范**：标题/目录名**禁止**加「煎蛋无聊图 + ID」前缀（`煎蛋无聊图6184947 — 秃鹫锐评流量时代` ❌）。标题用反映内容的纯中文标题（`秃鹫锐评流量时代` ✅）。源站 ID 保留在 frontmatter `source`，并在正文 H1 下加一行 `> 来源：煎蛋无聊图 No.{id}` 保持可追溯（参考 `战国版韩国黄金时代` 的写法）
@@ -258,69 +264,69 @@ NGA 帖子可能被版主锁定或删除，页面显示「此帖子被锁定」�
 
 ### Step 3: 执行采集
 
-**工具选择铁律：脚本优先。MCP 浏览器只在脚本明确搞不定时使用。**
+**工具选择铁律：脚本优先。已登录浏览器只在脚本明确搞不定时使用。**
 
 | 分层 | 工具 | 适用 |
 |------|------|------|
 | **L1** | `web_fetch.py` / `forum_scraper.py` (requests) | **所有场景首选**。纯 HTTP 请求，无需浏览器 |
 | **L2** | `web_fetch_full.py` (local Playwright) | L1 失败、需要 JS 渲染。**独立浏览器进程，并发安全** |
-| **L3** | **MCP Playwright 浏览器** | **仅** L1 + L2 都失败时才用。L3 采集**必须串行执行，禁止并发** |
+| **L3** | **已登录浏览器** | **仅** L1 + L2 都失败时才用。共享浏览器会话下的 L3 采集**必须串行执行，禁止并发** |
 
-> L2 和 L3 都基于 Playwright，渲染效果相同。区别：L2 每次启动独立浏览器进程（隔离、并发安全）；L3 操作你真实 Chrome（带已登录 session）。MCP 浏览器是兜底，不是默认。
+> L2 是独立浏览器进程（隔离、并发安全）；L3 使用宿主提供的已登录会话。L3 是兜底，不是默认，具体映射见[宿主兼容说明](references/host-compatibility.md)。
 >
-> NGA 帖子用 `forum_scraper.py` + Cookie 完美采集，今天却走 MCP 浏览器——这就是造成重复采集和内容错乱的根源。
+> NGA 帖子优先使用 `forum_scraper.py` + Cookie；误用共享浏览器容易造成重复采集和内容错乱。
 
 根据用户意图选择执行方式：
 
 | 场景 | 用户状态 | 执行方式 |
 |------|---------|---------|
 | **单链接，用户等着采完** | 用户明确要求采集，在等结果 | **inline** — 主会话直接跑脚本采集归档，有问题当场解决 |
-| **讨论中提到链接，顺便采集** | 用户在讨论其他事，提了一嘴采集 | **subagent** — 后台采，不打断当前讨论 |
-| **批量采集多个链接** | 用户给了多个链接要采集 | **subagents 并行** — 每个链接独立 subagent，同时跑 |
+| **讨论中提到链接，顺便采集** | 用户在讨论其他事，提了一嘴采集 | 宿主允许时委派后台代理；否则 inline |
+| **批量采集多个链接** | 用户给了多个链接要采集 | 宿主允许时按链接并行委派；否则逐个 inline |
 | **用户说"看看这个"** | 用户想先了解内容，不一定归档 | **inline 轻量预览** — 只抓取内容展示，不归档。确认要存再走采集流程 |
 
-**核心判断标准**：用户是不是在等结果。等 → inline；在做事 → subagent。
+**核心判断标准**：用户是不是在等结果。等 → inline；在做别的事且宿主允许委派 → 后台代理；否则 inline。
 
 #### Inline 采集
 
 主会话直接执行：
 
 1. 运行采集脚本（web_fetch.py / web_fetch_full.py / forum_scraper.py）
-   或通过 MCP 浏览器提取数据
+   或通过已登录浏览器提取数据
 2. 去重检查
 3. 图片下载
 4. 生成字段（title, slug, category, tags, summary）
-5. **[硬门禁] 规范审查** — 必须逐项通过 Step 4 清单，不通过不写入。**所有采集路径（脚本/MCP浏览器/subagent）无一例外**
+5. **[硬门禁] 规范审查** — 必须逐项通过 Step 4 清单，不通过不写入。**所有采集路径（脚本/已登录浏览器/委派代理）无一例外**
 6. 写入归档文件（archiver.py 或直接写 Markdown）
-7. FAISS 索引重建 — 若 inkwell-search 已安装：`python .claude/skills/inkwell-search/scripts/reindex.py`（全量重建，自动纳入新文件、清除重命名/删除的旧条目；比增量追加可靠，**每次采集后必须执行**）
+7. FAISS 索引重建 — 若 inkwell-search 已安装：`python <search-skill-dir>/scripts/reindex.py`（全量重建，自动纳入新文件、清除重命名/删除的旧条目；比增量追加可靠，**每次采集后必须执行**）
 8. 呈现结果
 
-过程中遇到问题（评论超限、Cookie 缺失）**直接在对话中确认**，不需要 subagent 来回倒手。
+过程中遇到问题（评论超限、Cookie 缺失）**直接在对话中确认**，不要让委派代理代替主会话做用户确认。
 
-> **Shell 安全**：Bash 工具的工作目录跨调用持久（`cd` 不会自动重置）。关键操作（archiver.py、文件写入）必须使用**绝对路径**，或在命令前先 `cd /Users/xiesh/writing/web-analysis` 重置。见问题 5（文件错写到深层嵌套路径）。
+> **Shell 安全**：Bash 工具的工作目录跨调用持久（`cd` 不会自动重置）。关键操作（archiver.py、文件写入）必须使用**绝对路径**，或在命令前先 `cd <project-root>` 重置。见问题 5（文件错写到深层嵌套路径）。
 
-#### Subagent 采集
+#### 委派代理采集（可选增强）
 
-当用户在做别的事时，启动 subagent 后台执行。其余情况使用 inline。
+仅当宿主提供并允许并行/后台代理，且任务可安全独立执行时使用。不可用时回退 inline，不能让核心采集流程失效。
 
 #### Subagent Prompt 模板
 
-Subagent 的完整指令见 `references/subagent-prompt.md`。使用时替换其中的 `{url}`, `{采集类型}`, `{inkwell-search 状态}` 等占位符，将完整内容作为 prompt 传入。
+委派代理的完整指令见 `references/subagent-prompt.md`。使用时替换其中的 `{url}`, `{采集类型}`, `{inkwell-search 状态}` 等占位符，将完整内容作为 prompt 传入。
 
 #### Subagent 配置
 
-- **subagent_type**: 不指定，使用默认的 general-purpose agent
+- 不指定专属代理类型，使用宿主默认的通用代理
 - **description**: 简短描述如 "采集 {url 或标题}"
-- Cookie 处理：subagent 可以 Read .env 文件读取已存储的 Cookie
-- 工具选择：遵循 **L1 脚本 → L2 本地 Playwright 脚本 → L3 MCP 浏览器** 的优先级。L3 是最后手段，不是默认选项。Subagent 同样必须遵守此铁律
-- **MCP 浏览器并发限制**：L3 采集**同一时间只允许一个 subagent 执行**。如果多个链接都需要 L3，必须串行排队，等前一个完成再启动下一个。L1/L2 不受此限制
+- Cookie 处理：代理可在权限允许时读取 `.env` 中已存储的 Cookie；不得把 Cookie 返回到对话或日志
+- 工具选择：遵循 **L1 脚本 → L2 本地 Playwright 脚本 → L3 已登录浏览器** 的优先级。委派代理同样必须遵守
+- **浏览器并发限制**：共享 L3 会话同一时间只允许一个代理执行；多个 L3 链接必须串行，L1/L2 不受此限制
 - 图片 OCR：采集到的图片如需提取文字，使用 `ocr_text.py`，不要现场用其他方式处理
-- 图片分析和字段生成：subagent 具备 Claude 能力，可以直接完成
+- 图片分析和字段生成：代理具备宿主视觉能力时直接完成，否则返回主会话处理
 - **错误反馈**：任何失败（采集失败、安装失败、需要用户交互）都必须**返回明确的错误信息和建议方案**给主会话，禁止静默卡住。
 
 ### Step 4: [硬门禁] 写入前规范审查
 
-**无论通过何种方式采集（脚本、MCP 浏览器、手动提取），写入任何归档文件之前，必须逐项通过此清单。一项不通过就修复，修复不了就问用户，禁止带着问题写入。**
+**无论通过何种方式采集（脚本、已登录浏览器、手动提取），写入任何归档文件之前，必须逐项通过此清单。一项不通过就修复，修复不了就问用户，禁止带着问题写入。**
 
 归档不是一次性操作——格式错误会在后续阅读、搜索、跨平台渲染时反复暴露。
 
@@ -343,10 +349,10 @@ Subagent 完成后，将结果展示给用户。
   - 如果用户之前明确要求讨论内容 → 自动衔接 inkwell-write
   - 如果用户目的不明确 → 询问"要讨论这篇内容吗？"，确认后再衔接
 - **失败** → 显示错误信息和建议方案，**等待用户指示下一步**（不能跳过询问直接重试）
-- **多个待确认事项** → **逐个确认**，一次只问一个问题。例如 subagent 返回了"需要 Cookie"和"评论超限"两个问题，先确认 Cookie，解决后再确认评论数。不要批量呈现。
-- **批量采集** → 汇总所有 subagent 的结果，报告成功/失败数量
-- **去重提示** → 如果 subagent 返回了去重警告，**让用户决定覆盖/跳过**，必须等待用户回答
-- **评论图片 OCR** → 如果 subagent 报告了 `reply_` 来源的图片，**询问用户是否需要 OCR 提取其中文字**。主帖图片自动 OCR，评论图片交给用户决定
+- **多个待确认事项** → **逐个确认**，一次只问一个问题。例如委派代理返回了"需要 Cookie"和"评论超限"两个问题，先确认 Cookie，解决后再确认评论数。不要批量呈现。
+- **批量采集** → 汇总所有代理或 inline 任务的结果，报告成功/失败数量
+- **去重提示** → 如果执行结果含去重警告，**让用户决定覆盖/跳过**，必须等待用户回答
+- **评论图片 OCR** → 如果执行结果包含 `reply_` 来源的图片，**询问用户是否需要 OCR 提取其中文字**。主帖图片自动 OCR，评论图片交给用户决定
 
 ```
 ✅ 已归档：[title]
@@ -377,7 +383,7 @@ Subagent 完成后，将结果展示给用户。
 }
 ```
 
-Claude Code 补充后（阶段二）：
+宿主模型补充后（阶段二）：
 ```json
 {
   "type": "webpage",
@@ -419,7 +425,7 @@ publish:
 ├── archived/YYYYMMDD/{slug}/
 │   ├── {slug}.md
 │   └── images/
-└── .claude/skills/inkwell-capture/
+└── <skill-dir>/
     ├── SKILL.md
     ├── scripts/
     │   ├── web_fetch.py

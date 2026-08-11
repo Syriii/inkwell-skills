@@ -11,7 +11,7 @@
   └── images/                 # 回答内嵌图片
 
 用法（在项目根执行）：
-  python .claude/skills/inkwell-capture/scripts/zhihu_writer.py \
+  python <skill-dir>/scripts/zhihu_writer.py \
       --qid 639844205 --title "问题标题" \
       --answers /tmp/zhihu_answers.json --meta /tmp/zhihu_meta.json \
       --category 文化 --tags 中医,食物 --desc "问题描述" \

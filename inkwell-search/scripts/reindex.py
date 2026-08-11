@@ -6,7 +6,7 @@
 重命名/删除的文件自动消失，新增文件自动纳入。
 
 用法（在项目根目录执行）：
-    python .claude/skills/inkwell-search/scripts/reindex.py
+    python <skill-dir>/scripts/reindex.py
 
 可用 --dirs 覆盖默认内容目录（默认: archived discussions creations）。
 """

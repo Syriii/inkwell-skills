@@ -9,7 +9,7 @@ Date（裸日期 `YYYY-MM-DD` 或 ISO `YYYY-MM-DDT...`），**禁止空格分隔
 同时检查正文是否混入了源站 frontmatter（嵌套 `---` 块），违反「归档纯净化」。
 
 用法（在项目根目录执行）：
-    python .claude/skills/inkwell-search/scripts/validate_frontmatter.py
+    python <skill-dir>/scripts/validate_frontmatter.py
 
 退出码：0 = 全部合规；1 = 发现问题。
 reindex.py 重建索引后自动调用，作为采集后的格式门禁。

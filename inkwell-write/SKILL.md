@@ -12,13 +12,19 @@ description: >
 
 一个 Skill，两种模式。**先讨论再创作是常态**，也可直接进入创作模式。
 
+## 运行时约定
+
+- 将当前 `SKILL.md` 所在目录解析为 `<skill-dir>`，将当前内容项目根解析为 `<project-root>`；不要依赖 `.claude`、`.codex` 或机器绝对路径。
+- 需要语义搜索时，通过宿主技能发现机制定位 inkwell-search，并将其目录解析为 `<search-skill-dir>`。
+- 需要外部检索或网页阅读时，先读取[宿主兼容说明](references/host-compatibility.md)，使用当前宿主可用且已授权的能力。
+
 ## 启动检查
 
 首次触发时执行：
 
 1. **检查 inkwell-search**
-   - 检查 `.claude/skills/inkwell-search/` 是否存在
-   - 不存在 → 自动安装（静默，用户无感）
+   - 通过宿主技能发现机制定位并解析 `<search-skill-dir>`
+   - 不存在 → 告知用户语义注入不可用；继续使用用户提供的素材和普通文本检索。只有用户同意后才安装
    - 确认 `.retrieval-index/config.json` 的 `source_dirs` 包含 `discussions`，没有则追加
 
 2. **检查目录**
@@ -58,7 +64,7 @@ description: >
 每次讨论开始时自动调 inkwell-search：
 
 ```bash
-python .claude/skills/inkwell-search/scripts/searcher.py search \
+python <search-skill-dir>/scripts/searcher.py search \
   --query "<主题>" --granularity both --top-k 10 --threshold 0.50
 ```
 
@@ -82,7 +88,7 @@ python .claude/skills/inkwell-search/scripts/searcher.py search \
 - 外部搜索 → URL + 关键信息摘要
 
 ```bash
-python .claude/skills/inkwell-write/scripts/references_builder.py update \
+python <skill-dir>/scripts/references_builder.py update \
   --dir "discussions/{slug}" \
   --add "<路径或URL>|<标签>|<摘要>"
 ```
@@ -93,7 +99,7 @@ python .claude/skills/inkwell-write/scripts/references_builder.py update \
 
 ### 开局分析
 
-搜索完成后、进入讨论前，Claude **必须先对注入素材做开局分析**，给用户一个可反应的起点：
+搜索完成后、进入讨论前，模型 **必须先对注入素材做开局分析**，给用户一个可反应的起点：
 
 1. **总结**：素材的核心论点或关键信息，一两句话
 2. **启发**：有意思的视角、让人多想一步的细节、反直觉的点
@@ -106,13 +112,13 @@ python .claude/skills/inkwell-write/scripts/references_builder.py update \
 
 两种子模式共用同一套轮次结构，仅交互风格不同：
 
-**对话讨论**（默认）— Claude 与用户来回对话，逐步深入。大多数讨论走这个模式。
+**对话讨论**（默认）— 模型 与用户来回对话，逐步深入。大多数讨论走这个模式。
 
-**结构化分析** — 用户明确说「分析一下」/「总结这个角度」时触发。Claude 一次性输出多角度/利弊/要点提炼。不需要多轮对话。
+**结构化分析** — 用户明确说「分析一下」/「总结这个角度」时触发。模型 一次性输出多角度/利弊/要点提炼。不需要多轮对话。
 
 ### 轮次节点
 
-**开局分析给出的 2-3 个方向，就是预设的轮次节点。** 用户决定顺序——选哪个就从哪个开始，讨论按用户选择的节奏推进。每个方向聊出结论后写一轮，再切换（用户选下一个，或 Claude 建议剩余方向）。
+**开局分析给出的 2-3 个方向，就是预设的轮次节点。** 用户决定顺序——选哪个就从哪个开始，讨论按用户选择的节奏推进。每个方向聊出结论后写一轮，再切换（用户选下一个，或 模型 建议剩余方向）。
 
 | # | 触发条件 | 行为 |
 |---|---------|------|
@@ -177,7 +183,7 @@ python .claude/skills/inkwell-write/scripts/references_builder.py update \
 
 **每轮**：
 ```bash
-python .claude/skills/inkwell-write/scripts/discussion_writer.py write-round \
+python <skill-dir>/scripts/discussion_writer.py write-round \
   --dir "discussions/{slug}" --round <N> \
   --title "<角度>" --category "<分类>" --tags "<标签>" \
   --based-on "<引用路径>" --content "<正文>"
@@ -185,7 +191,7 @@ python .claude/skills/inkwell-write/scripts/discussion_writer.py write-round \
 
 **总结**（合并了原 初步结果，同时承担讨论回顾 + 创作交接）：
 ```bash
-python .claude/skills/inkwell-write/scripts/discussion_writer.py write-summary \
+python <skill-dir>/scripts/discussion_writer.py write-summary \
   --dir "discussions/{slug}" \
   --category "<分类>" --tags "<标签>" --rounds <N> \
   --based-on "<引用路径>" --content "<正文>"
@@ -199,7 +205,7 @@ python .claude/skills/inkwell-write/scripts/discussion_writer.py write-summary \
 `references.md` 是讨论的素材库存清单，**搜索注入时自动建立**。讨论过程中发现新素材时手动追加：
 
 ```bash
-python .claude/skills/inkwell-write/scripts/references_builder.py update \
+python <skill-dir>/scripts/references_builder.py update \
   --dir "discussions/{slug}" \
   --add "<path或URL>|<label>|<摘要>"
 ```
@@ -211,19 +217,19 @@ python .claude/skills/inkwell-write/scripts/references_builder.py update \
 
 批量追加：
 ```bash
-python .claude/skills/inkwell-write/scripts/references_builder.py update \
+python <skill-dir>/scripts/references_builder.py update \
   --dir "discussions/{slug}" \
   --add-multi '[["path1","label1","> excerpt1"],["url2","label2","excerpt2"]]'
 ```
 
 查看已收集的引用：
 ```bash
-python .claude/skills/inkwell-write/scripts/references_builder.py show --dir "discussions/{slug}"
+python <skill-dir>/scripts/references_builder.py show --dir "discussions/{slug}"
 ```
 
 ### 创作就绪判断
 
-讨论达到以下四个条件时，Claude 应主动提示「可以创作了」：
+讨论达到以下四个条件时，模型 应主动提示「可以创作了」：
 
 | # | 条件 | 自检 |
 |---|------|------|
@@ -232,7 +238,7 @@ python .claude/skills/inkwell-write/scripts/references_builder.py show --dir "di
 | 3 | **证据类型充足** | 至少覆盖 3 种不同来源（历史、数据、跨文化、生理机制、民间实践等） |
 | 4 | **用户明确了创作主题** | 讨论覆盖很多角度，但文章只能写一个。用户决定了写什么、面向谁、传递什么 |
 
-> 前三个条件满足后，Claude 可以问：「讨论比较充分了，有想写的角度吗？」
+> 前三个条件满足后，模型 可以问：「讨论比较充分了，有想写的角度吗？」
 > 第四个条件必须由用户给出。没有明确主题时不自动推进到创作。
 
 ### 讨论升级为创作
@@ -270,7 +276,7 @@ python .claude/skills/inkwell-write/scripts/references_builder.py show --dir "di
 
 ### 五步流程（每步需用户确认，产出步骤内含审查）
 
-每个产出步骤（提纲、草稿、定稿）写入后，Claude 必须先执行一次**结构化审查**，再呈现给用户确认。审查不是自我批改——是逐条对照检查表，判断是否通过、是否需要修复。
+每个产出步骤（提纲、草稿、定稿）写入后，模型必须先读取[写作审查与逻辑链](references/writing-review.md)，执行对应的结构化审查并修复，再呈现给用户确认。
 
 #### Step 1: 定方向
 1. 用户给主题或素材
@@ -281,145 +287,24 @@ python .claude/skills/inkwell-write/scripts/references_builder.py show --dir "di
 
 #### Step 2: 写提纲 → 审查 → 用户确认
 
-1. Claude 基于素材写提纲（一/二级标题）
-2. **审查提纲**（逐项通过后呈现给用户）：
-
-| # | 检查项 | 通过标准 |
-|---|--------|---------|
-| 1 | **结构类型明确** | 提纲是递进式还是并列式？递进式要求段段因果相连，并列式要求共享前提 + 各论点独立闭合。不能混——不能给并列论点编递进关系 |
-| 2 | **顺序自然** | 递进式：按读者脑中问题的自然出现顺序展开，而非学术框架。并列式：论点按读者关心的优先级排列（最常见/最重要的问题先讲），而非逻辑推导顺序 |
-| 3 | **段段有目的** | 递进式：每段承担破/转/用等角色。并列式：每个论点内部有完整小链（共享前提 → 该论点的起点问题 → 解释 → 落脚点）。去掉任何一段会不会断？ |
-| 4 | **逻辑闭合** | 开头提出的问题，结尾有没有回扣回答。并列式还要检查：共享前提是否真的成立（读者看完前提段后，确实能理解后续论点的出发点） |
-| 5 | **字数适配** | 预估字数是否匹配目标平台（公众号科普观点文 1000-1500 字） |
-| 6 | **遗漏检查** | 讨论中的关键论据有没有在提纲里丢了 |
-
-3. 呈现审查结论 + 提纲 → 用户修改/确认 ✓
-4. 写入：
+1. 模型基于素材写一/二级标题提纲。
+2. 读取 `references/writing-review.md` 的“提纲审查”，逐项修复后呈现审查结论和提纲，让用户确认。
+3. 写入：
 ```bash
-python .claude/skills/inkwell-write/scripts/outline_writer.py write \
+python <skill-dir>/scripts/outline_writer.py write \
   --dir "creations/{article-slug}" --title "<标题>" \
   --category "<分类>" --tags "<标签>" \
   --based-on "<引用路径>" --content "<提纲>"
 ```
-
-5. **推导逻辑链**（提纲确认后、出草稿前必须执行）：
-
-提纲只是章节列表。写之前必须先判断文章属于哪种结构，再按对应方式推导逻辑链。
-
-**先判断结构类型**：
-
-| 结构 | 特征 | 例子 |
-|------|------|------|
-| **递进式** | 每个段落是上一段引出的问题的答案，又引出下一段的问题。全文一条链。 | "食物寒热到底怎么来的？→原来是药的分法→搬到食物上靠谱吗？→…" |
-| **并列式** | 多个独立论点共享同一个前提，论点之间没有因果关系。每个论点内部有自己的小逻辑链。 | 腐败影响寒热、做法影响寒热、中性食物乱分——三个独立问题，都从同一个前提（"古人吃了看反应"）出发 |
-
-**递进式逻辑链格式**：从开头到结尾，每个节点标注"读者这时候在想什么"，箭头指向下一段如何回应：
-
-```
-[开头] 读者脑中已有的经验或场景
-    ↓ "这时候冒出的第一个问题是什么？"
-[段落A] 回应 → 同时引出新的问题
-    ↓ "知道了这个之后，自然会问什么？"
-[段落B] 回应 → 又引出新问题
-    ↓ ...
-[...] 一直推到读者的生活场景：什么情况下会需要用到这个知识？
-    ↓
-[收尾] 回到开头场景，读者知道怎么做了
-```
-
-**并列式逻辑链格式**：先写共享前提，再逐个论点拆内部小链：
-
-```
-[开头] 读者脑中已有的经验或场景
-    ↓ "这时候冒出的问题是什么？"
-[前提段] 回应共同的起点问题（如"古人怎么判断？→吃了看反应"）
-
-至此，读者脑中有了一个框架。接下来的论点不是递进关系，是并列的——每个都从这个框架出发：
-
-论点1：（如腐败）
-  前提段 → "那吃坏肚子不就被误判了？" → 解释腐败如何导致误判 → "冰箱出现后这个前提就没了"
-论点2：（如做法）
-  前提段 → "同一个东西做法不同，反应就不同？" → 油炸凉拌对比 → "哦，记录的是身体反应不是成分"
-论点3：（如中性食物）
-  前提段 → "那具体到某一种食物呢？" → 芒果/牛奶例证 → "大方向有用，单品种不靠谱"
-
-[收尾] 回到开头场景，综合这些论点给出行动建议
-```
-
-**并列式结构的要点**：
-- 论点之间的过渡不需要伪造因果——"还有另一个问题""更具体的例子""那具体到某一种食物呢"就够了
-- 每个论点的内部小链必须闭合：起点问题 → 解释 → 落脚点
-- 论点之间的顺序遵循读者关心的优先级（最常见的问题先讲），而非逻辑推导顺序
-- 不要硬给并列论点编递进关系——读者能感觉到你在假装推导
-
-**通用检查**：
-- 递进式：每个 ↓ 左边的段落**确实会**让读者产生右边的那个疑问
-- 并列式：共享前提成立、每个论点内部小链闭合、论点过渡自然（不伪造因果）
-- 链条末尾必须落地到实际场景——读者看完知道怎么做，不是只知道怎么回事
-- 如果某个段落在链条中没有位置（既不是递进的一环，也不是并列的一个论点），删掉或重新定位
-
-6. 链条经用户确认后，进入 Step 3 出草稿。
+4. 提纲确认后，读取同一参考的“逻辑链推导”，判断递进式或并列式，推导并呈现逻辑链；用户确认后进入 Step 3。
 
 #### Step 3: 出草稿 → 审查 → 用户确认
 
-1. Claude 按选定风格和提纲写全文
-
-**写之前自检**：我是在把信息传递给读者，还是在表演「写一篇好文章」？以下迹象出现任何一个，停下来，回到「只传递信息」：
-
-- **预告结构**：任何形式的「接下来要讲 X 个」「先说一下 XX」「主要有三点」——读者不需要导游，分隔线就是过渡
-- **虚构发现过程**：「查了才知道」「一查发现」「说实话我一直没当回事」——不需要表演探索历程，直接给结论
-- **制造戏剧性转折**：把事实过渡包装成剧情翻转——短句独立成段制造悬念，好像接下来要揭晓一个惊天秘密。事实不需要悬念，直接陈述什么前提变了、导致什么结论不再成立
-- **追求金句**：三连排比、破折号收束、让读者想划线摘抄的句子——把事讲清楚就够了，读者自己会判断什么值得记
-- **替读者总结**：「你会发现」「这说明」「看下来你会发现一个规律」——只展示，不替读者消化
-
-内容本身足够有意思，不需要表演。
-
-2. **审查草稿**（逐项通过后呈现给用户）：
-
-**结构审查**：
-
-| # | 检查项 | 通过标准 |
-|---|--------|---------|
-| 1 | **开头钩子** | 前 50-100 字是否让读者有理由继续读（场景共鸣、反直觉、提问） |
-| 2 | **段段有血肉** | 每个论点有没有配例子/细节/数据——抽象结论要有可感知的支撑 |
-| 3 | **语气全篇一致** | 不忽冷忽热——该讲道理的地方不突然煽情，该接地气的地方不突然学术腔 |
-| 4 | **结尾回扣** | 是否回到开头的钩子或场景，让读者感到「看完了有变化」 |
-| 5 | **无素材残留** | 是否为引用而引用的段落、不服务论点的知识展示——有就删 |
-
-**AI 味检测 — 表层**（查可见模式，逐句扫描）：
-
-| # | 检查项 | 涵盖的旧模式 |
-|---|--------|-------------|
-| 1 | **自我解释** | 自问自答、结构预告、铺垫句（"值得一提的是""首先要说清楚"）。也包括**假发现过程**——"查了才知道""一查发现""说实话我一直没当回事"——不需要表演探索历程，直接给结论 |
-| 2 | **编号化思维** | 编号列举、"分两种情况""从以下几个维度"——用自然递进代替 |
-| 3 | **收束冲动** | 总结句、段末收束小句、"综上所述"、"希望通过这篇文章"、参考文献式收尾。也包括**AI 收尾话术**——结尾用原文没讨论过的金句强行收束（"它不是真理，是个可以检验的猜测""信不信，身体最清楚"），结尾内容必须来自前文论证，不凭空造金句 |
-| 4 | **书面语残留** | 复句关联词（"不仅…而且…"）、介词框架（"在XX的基础上"）、段落连接词（"此外""另一方面"）。也包括**术语错位**——把其他领域的词用在不对的语境里（"大品类"是商品分类词、"精度"是测量术语） |
-| 5 | **段落节奏机械** | 段落长度均匀、标点功能单一——特别是破折号表演式停顿、引号包裹大白话。也包括**表演式短句**——"你吃"作为独立祈使句试图制造果断感，实际效果是发号令 |
-
-**AI 味检测 — 深层**（写完通读自问）：
-
-| # | 问题 | 说明 |
-|---|------|------|
-| 6 | **这话我日常会说出来吗？** | 不是语法正确就行——是正常人嘴里的句子。破折号是不是在装有力？引号是不是在把大白话标成概念？删掉换逗号，去引号直接说。 |
-| 7 | **这里有我的困惑或好奇吗？** | 还是每个句子都在为论点打工？允许冗余、跑题、"怎么说呢"——真人有废话。找到一处你真的觉得有意思的地方，让它在句子里活着。 |
-| 8 | **我是不是在替读者下判断？** | "没毛病""对吧""这说明"——删。只展示，不替读者点头。 |
-| 9 | **下一句是上一句自然想要的吗？** | 逐句读。听到上句之后，下一句是不是读者脑子里会接的东西？如果下一句在讲另一个话题、或者需要回头再看一遍才能接上——那就是在扩写提纲，不是在推进思路。特别注意：(1) 「也」「还」「另外」——检查前面有没有东西让它「也」(2) 承诺句——「这里有个容易被忽略的东西」，后面兑现了吗(3) 结论句——证据在前面已经铺好了吗，还是结论比证据先到了(4) **假转折词**——「但」前面没有对立、「所以」前面没有因果、「然后」前后是平行关系，硬用关联词伪造逻辑链条 |
-| 10 | **这个单句段落是节奏需要，还是不知道怎么接？** | 单句成段只用于两种场景：翻转节点（「有了冷藏之后，食物不再轻易腐败」——前提变了）、分析到实践的 pivot（「那这东西到底怎么用」）。如果单句段落是解释、列举、或下一个话题的开头——它应该合并到相邻段落。单句段落每篇不超过 3-4 处。注意：翻转节点不等于戏剧性——「然后冰箱出现了」是表演，不是翻转 |
-
-**审查流程**：
-
-1. **标记保护区**：先划出不可改的内容——直接引语、数据、术语、关键事实句。这些只检查准确性，不改风格。
-2. **表层扫描**：逐句查 5 条表层模式，命中即标记并改写。
-3. **风格复审**：对照选定风格文件的 §10（风格特有禁忌），确认没有踩本风格的红线。§1-§9（开头、节奏、结构、标点等）在写作时已经自然遵循，审查时只看 §10。
-4. **深层自问**：通读全文，逐条过 5 个深层问题（#6-#10）。标记"不对劲"的句子，不是靠清单——是靠"我不信这是我说的"。
-5. **两遍回读**：
-   - Pass 1（保真）：信息没丢？术语没漂？删改后有断裂吗？
-   - Pass 2（残留）：还有没有没清干净的表演句、收束腔、narrator 腔？
-
-3. 呈现审查结论 + 草稿 → 用户确认 ✓
-4. 写入（**每次写入自动生成新版本**：drafts/v1.md, v2.md, ...）：
+1. 读取 `references/writing-review.md` 的“写前自检”，按选定风格和提纲写全文。
+2. 执行同一参考中的“草稿审查”，修复后呈现审查结论和草稿，让用户确认。
+3. 写入（**每次写入自动生成新版本**：drafts/v1.md, v2.md, ...）：
 ```bash
-python .claude/skills/inkwell-write/scripts/draft_writer.py write \
+python <skill-dir>/scripts/draft_writer.py write \
   --dir "creations/{article-slug}" --title "<标题>" \
   --category "<分类>" --tags "<标签>" \
   --status draft --word-count <N> \
@@ -429,10 +314,10 @@ python .claude/skills/inkwell-write/scripts/draft_writer.py write \
 ```
 
 #### Step 4: 审阅迭代
-1. 用户反馈 → Claude 修改
+1. 用户反馈 → 模型 修改
 2. 每次修改后判断变更大小：
 ```bash
-python .claude/skills/inkwell-search/scripts/searcher.py compare \
+python <search-skill-dir>/scripts/searcher.py compare \
   --text-a "<旧版>" --text-b "<新版>" --strategy auto
 ```
 - 变更大小仅用于**告知用户改了多少**，不决定写入方式
@@ -459,14 +344,14 @@ python .claude/skills/inkwell-search/scripts/searcher.py compare \
 
 一篇文章可以聚合多个讨论的成果。在 Step 3 出草稿时，通过 `--source-discussions` 声明文章引用了哪些讨论的 slug。
 
-inkwell-search 拉所有相关素材，Claude 自动整合。产出落在 `creations/{article-slug}/` 下；跨多个讨论时由用户决定 article slug。
+inkwell-search 拉所有相关素材，模型 自动整合。产出落在 `creations/{article-slug}/` 下；跨多个讨论时由用户决定 article slug。
 
 ### 产出状态查询
 
 随时查询哪些讨论已产出文章、哪些还没有：
 
 ```bash
-python .claude/skills/inkwell-write/scripts/discussion_writer.py status [--filter created|uncreated|all]
+python <skill-dir>/scripts/discussion_writer.py status [--filter created|uncreated|all]
 ```
 
 原理：扫描 `creations/` 下所有文章的 `source_discussions` 字段，与 `discussions/` 下所有有记录的讨论做差集。
@@ -485,7 +370,7 @@ python .claude/skills/inkwell-write/scripts/discussion_writer.py status [--filte
 
 **Step C1: 确定目标**
 1. 用户指定体裁和人格方向（如"健康科普 + 医生朋友口吻"），或给出参考来源（如"果壳和丁香医生的文风"）
-2. Claude 确认：体裁、人格、目标来源
+2. 模型 确认：体裁、人格、目标来源
 
 **Step C2: 收集样本**
 - 默认标准：12+ 篇、3-4 来源、每来源 5+ 篇、覆盖短中长篇幅
@@ -514,7 +399,7 @@ python .claude/skills/inkwell-write/scripts/discussion_writer.py status [--filte
 | ... | ... | ... |
 
 - **采集日期**：YYYY-MM-DD
-- **采集方法**：WebSearch + WebFetch / MCP 浏览器 / ...
+- **采集方法**：宿主网页检索 / 已登录浏览器 / 用户提供来源 / ...
 - **总样本**：N 篇
 - **遗漏**：（无则写"无"）
 ```

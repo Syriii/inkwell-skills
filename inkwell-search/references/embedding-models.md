@@ -44,4 +44,4 @@
 
 ## 模型存放
 
-所有模型缓存到 `/Users/xiesh/Codes/models/embedding/`，由 sentence-transformers 自动管理。
+所有模型缓存到 `<models-dir>/embedding/`，由 sentence-transformers 自动管理。
