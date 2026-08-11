@@ -1,0 +1,4 @@
+interface:
+  display_name: "Inkwell 剪藏"
+  short_description: "采集网页、论坛、截图与媒体内容并归档为结构化 Markdown"
+  default_prompt: "使用 $inkwell-capture 将这个链接忠实归档为 Markdown。"

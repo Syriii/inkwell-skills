@@ -1,0 +1,4 @@
+interface:
+  display_name: "Inkwell 牵丝"
+  short_description: "为本地 Markdown 文档建立语义索引、搜索内容并检查相似度"
+  default_prompt: "使用 $inkwell-search 搜索知识库中与这个主题相关的内容。"
