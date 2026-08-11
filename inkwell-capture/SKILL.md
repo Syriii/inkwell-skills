@@ -20,7 +20,8 @@ description: >
 ## 运行时约定
 
 - 将当前 `SKILL.md` 所在目录解析为 `<skill-dir>`，将当前内容项目根目录解析为 `<project-root>`；不要假设技能安装在 `.claude`、`.codex` 或任何固定绝对路径。
-- 使用视觉、已登录浏览器或并行代理前，先读取 [宿主兼容说明](references/host-compatibility.md)，按 Codex/Claude Code 当前可用能力选择实现并遵守宿主权限策略。
+- 按当前输入类型渐进加载：普通本地文件归档不读取站点规则、仪表盘模板或宿主兼容说明；只有实际使用视觉、已登录浏览器或并行代理时，才读取[宿主兼容说明](references/host-compatibility.md)。
+- 正常采集直接执行下方已文档化的 CLI，不预先通读脚本源码；仅在命令失败、需要调试或用户要求修改实现时读取对应脚本。
 
 ## 初始化
 
@@ -40,18 +41,18 @@ description: >
    forum_domains: []
    inbox_cleanup: keep_dir
    ```
-3. **检查 Python 依赖**：
-   - 读取 `<skill-dir>/scripts/requirements.txt`，对比已安装的包
-   - 缺少核心依赖时提示用户：
+3. **按需检查 Python 依赖**：
+   - 先确定本次输入要使用的脚本，仅检查该入口所需依赖；普通本地文本文件可直接读取，不加载依赖清单
+   - 命令因缺少依赖失败时，再读取 `<skill-dir>/scripts/requirements.txt` 并提示用户：
      ```
      pip install -r <skill-dir>/scripts/requirements.txt
      ```
    - OCR 依赖（Pillow、pytesseract）为可选，需要时才提示安装
    - 遵循**安装铁律**：任何 pip/brew/apt 命令执行前必须征得用户同意
-4. 创建 `总览.md`（Obsidian Dataview 仪表盘，可选）：
-   - 检查项目根目录是否存在 `总览.md`
-   - 不存在 → 从 `<skill-dir>/references/dashboard-template.md` 复制到 `总览.md`
-   - 提醒用户：需要安装 Obsidian Dataview 插件，在阅读模式（`Cmd+E`）下使用
+4. `总览.md` 为按需能力，不属于普通归档初始化：
+   - 仅当用户明确要求创建 Obsidian Dataview 总览时，才直接复制 `<skill-dir>/references/dashboard-template.md` 到项目根目录
+   - 复制模板无需读取其全文；随后提醒用户需要安装 Obsidian Dataview 插件
+   - 用户未要求总览时跳过，不创建、不加载模板
 
 ## 执行流程
 
@@ -68,6 +69,7 @@ description: >
 | URL + 完全已知（域名+结构已沉淀规则） | 匹配「已沉淀的域名规则」中的 URL 模式 | 直接按规则执行，跳过评估 |
 | URL + 已知域名但结构不确定 | 域名在规则中，但 URL 模式不匹配 | 进入 **Step 2.5 前置网页评估** |
 | URL + 未知域名/疑似论坛 | 域名不在任何沉淀规则中 | 进入 **Step 2.5 前置网页评估** |
+| 本地文本/HTML/PDF | 已存在的本地文件路径 | 直接从本地读取、清洗并归档；不走网页抓取，不读取站点专属参考 |
 | .png/.jpg/.jpeg 截图 | 文件扩展名 | **阻塞询问**：图片类还是文字类？必须等回答再继续 |
 | 图片类截图 | 用户选图片类 | 检查模型多模态支持 → **对话中分析** |
 | 文字类截图 | 用户选文字类 | `ocr_text.py` |
@@ -81,39 +83,9 @@ description: >
 
 ### inbox 入口（媒体文件中转）
 
-当用户要处理图片、视频等媒体文件，但没有给出具体路径时，使用 `inbox/` 目录作为统一入口。
+仅当用户要处理媒体文件却未给具体路径时，读取并执行[媒体 inbox 流程](references/media-inbox.md)。普通 URL 或本地文件归档不加载该参考。
 
-> **数据安全铁律**：inbox 中的源文件是用户的原始数据。归档未完成、源文件未确认保存到 `archived/` 之前，**绝对禁止**清理 inbox。丢失用户数据是不可接受的。
-
-1. **确保 inbox 存在**：检查项目根目录是否有 `inbox/`，没有则创建
-2. **告知用户**：「把文件放到 `inbox/` 目录，放好后告诉我。」**阻塞等待**用户确认
-3. **扫描文件**：`ls inbox/` 列出所有文件，向用户确认：「检测到 N 个文件：[列表]。」
-4. **多图检测**：当多张图片满足以下特征时，**主动询问用户**是否属于同一文档：
-   - 命名连续（1.jpg, 2.jpg, ...）或同前缀
-   - 文件大小接近（同来源截图通常尺寸相近）
-   - 上传时间一致
-   - → 「检测到这 N 张图可能是同一文档的连续截图，合并处理还是分开？」
-   - 用户确认合并 → OCR 后合并为一份文档归档；确认分开 → 逐张独立处理
-5. **确认处理方式**：「需要：(1) 提取文字/OCR (2) 视觉分析理解 (3) 两者都要？」
-6. **逐文件处理**：
-   - 图片 → 使用宿主视觉能力分析，或用 `ocr_text.py` 提取文字
-   - 视频 → 使用宿主视觉能力分析关键帧；如需完整逐帧分析，先让用户用 ffmpeg 拆帧
-   - 混合时按文件类型自动匹配处理方式
-7. **汇总结果**：呈现分析结果，询问是否需要归档为 Markdown
-8. **归档（可选）**：如果用户要保存分析结果：
-   - 写入 Markdown 到 `archived/YYYYMMDD/{slug}/{slug}.md`
-   - **将 inbox 中的源文件复制到** `archived/YYYYMMDD/{slug}/images/`（而非移动——源文件仍需保留在 inbox 直到验证完成）
-   - 确认 `archived/YYYYMMDD/{slug}/images/` 中文件完整且可读
-9. **验证归档完整性**：确认以下条件全部满足后，才能进入清理步骤：
-   - `archived/YYYYMMDD/{slug}/{slug}.md` 存在且内容完整
-   - 源文件已复制到 `archived/YYYYMMDD/{slug}/images/`，数量、大小与 inbox 一致
-   - 不满足时立即报告用户，**禁止继续**，**禁止清理 inbox**
-10. **清理**：验证通过后，根据 `.web-analysis.yaml` 中 `inbox_cleanup` 配置：
-   - `keep_dir`（默认）：`rm inbox/*` 只清文件，保留目录
-   - `remove_dir`：`rm -rf inbox/` 删除整个目录
-11. **不复盘档案**：如果用户选择不归档，询问是否仍要清理 inbox 中的源文件，**阻塞等待**用户确认后才能清理
-
-后续新增媒体类型（PDF、音频等）也统一走 inbox 入口，无需修改流程。
+> **数据安全铁律**：inbox 中的源文件是用户原始数据。归档与复制校验完成前绝不清理；未归档时必须先获得用户明确确认。
 
 ### Step 2.5: 前置网页评估（模型驱动）
 
@@ -130,122 +102,11 @@ description: >
    - 然后只问一个问题："建议[AA采集方案]。是否按此方案采集？"
    - 用户说"调整"或"讨论"时再展开
    - 不要把所有选项（方案/评论数/Cookie/图片）一次性全问
-5. **沉淀规则**：讨论确定的最佳实践，更新到下方的「**已沉淀的域名规则**」中，下次同类 URL 自动套用，跳过评估
+5. **沉淀规则**：用户明确要求固化新站点规则时，更新 `references/site-rules.md`；普通采集不修改技能自身文件
 
-### 已沉淀的域名规则
+### 已沉淀站点规则（按域名加载）
 
-以下规则经讨论确认，遇到匹配的 URL 模式时**直接按规则执行**，不再走 Step 2.5 评估。
-
-#### 知乎 (zhihu.com)
-
-**URL 模式识别**：
-
-| URL 模式 | 含义 | 采集范围 |
-|---------|------|---------|
-| `/question/{id}/answer/{aid}` 或 `/answer/{id}` | 单个回答 | 仅该回答正文 + 评论区，目录名为模型总结的回答标题 |
-| `/question/{id}` | 整个问题 | **询问用户**：全部回答 / 前 N 个高赞？是否含评论？ |
-
-`/answer/{id}` 会自动重定向到 `/question/{qid}/answer/{aid}`，问题上下文永远可用。
-
-**反爬策略**：知乎对自动化请求有严格反爬检测。
-
-| 层级 | 方式 | 结果 |
-|------|------|------|
-| L1 | `web_fetch.py` (requests + trafilatura) | 403，反爬拦截 |
-| L2 | `web_fetch_full.py` (Playwright + Cookie) | 40362 错误码，异常访问限制 |
-| L3 | **已登录浏览器** | ✅ 正常访问，可滚动加载 |
-
-> 知乎采集通常需要 **L3 已登录浏览器**。按[宿主兼容说明](references/host-compatibility.md)选择浏览器能力，完成导航、增量滚动和 DOM 提取。
-
-**目录结构模板**：
-
-1. **单回答** (`/answer/{id}`)：
-```
-archived/YYYYMMDD/{回答标题-slug}/
-├── {回答标题-slug}.md          # 回答正文，frontmatter 含问题来源和作者
-├── comments.md                 # 该回答评论区
-└── images/                     # 该回答图片
-```
-- `回答标题-slug` 由模型根据回答内容总结生成，**必须为中文**（禁止拼音/英文）
-- 作者名写入文档 frontmatter 而非目录名
-
-2. **全问题** (`/question/{id}`)：
-```
-archived/YYYYMMDD/{问题名称-slug}/
-├── {问题名称-slug}.md          # 问题总览（type: zhihu_question，唯一顶层入口）
-├── 回答/                       # 回答正文（无 frontmatter，纯 Markdown）
-│   ├── {回答1标题-slug}.md
-│   ├── {回答2标题-slug}.md
-│   └── ...
-└── images/                     # 所有回答的图片共用
-```
-- `问题名称-slug` 从问题标题生成
-- 每个回答的 `{slug}` 由模型根据该回答内容总结，**必须为中文**
-- **回答 `.md` 不写 frontmatter**——只有问题总览 `{问题名称-slug}.md` 有完整 frontmatter
-- **回答文件放在 `回答/` 子目录**，问题总览是目录下唯一顶层 .md（清晰入口，避免 20+ 回答文件平铺淹没入口）
-- 问题总览中通过 wikilink `[[{回答slug}]]` 导航到各回答（Obsidian 按文件名解析，子目录内仍有效）
-- 下载图片统一放在 `images/`，回答正文中直接用 `images/xxx.jpg` 引用
-- 评论区上限由 `comment_limit` 控制（默认 500 条），超过时先询问用户
-
-**全问题采集执行（L3 已登录浏览器 + zhihu_writer.py）**：
-
-1. **浏览**：用宿主已登录浏览器打开 `/question/{id}`
-2. **加载回答**：用真实滚轮事件增量滚动；`window.scrollTo/scrollBy` 可能不触发知乎无限滚动
-3. **提取**：在页面上下文提取回答和元数据，保存到目标归档目录内的临时 JSON（避免大量文本进入上下文），写入完成后删除临时 JSON：
-   - 回答：`.List-item` → `.VoteButton` aria-label「赞同 N」、`.AuthorInfo-name`、`.RichContent-inner` 正文、`data-original` 全图
-   - 元数据：回答总数（「N 个回答」）、每个回答 `/answer/` 链接与「发布于/编辑于」日期、`.QuestionRichText` 问题描述
-4. **slug**：为前 N 高赞回答各写一个中文 slug（模型根据内容总结）
-5. **写入**：
-   ```
-   python <skill-dir>/scripts/zhihu_writer.py \
-       --qid {id} --title {标题} --answers {answers.json} --meta {meta.json} \
-       --category {分类} --tags {标签} --desc {描述} --slugs {slugs.json}
-   ```
-   自动生成问题总览 + N 个回答文件 + 下载内嵌图片。若用户只要「仅问题总览」→ 不调 zhihu_writer
-
-#### NGA (bbs.nga.cn)
-
-**URL 模式**：`/read.php?tid={数字}` — 论坛帖子。
-
-**采集方式**：`forum_scraper.py` 自动识别 NGA 域名，调用 NGA 专用处理器（`forum/nga.py`）。自动从 `.env` 加载 `NGA_COOKIE`。支持多页采集、BBCode 清洗、图片提取、用户归属标记。
-
-**NGA 特有情况 — 帖子锁定/删除**：
-
-NGA 帖子可能被版主锁定或删除，页面显示「此帖子被锁定」「帖子不存在」等提示。此时：
-- **立即停止采集**，不要重试（跟 Cookie 或网络无关，换任何方式都看不到）
-- 返回明确错误给用户：「帖子已被锁定或删除，无法采集：[url]」
-
-**NGA 图片反盗链**：NGA 图片 CDN 对 Python `requests` 的 TLS fingerprint 会返回 567 错误。archiver.py 已内置自动降级：requests 下载失败时自动改用 `curl` + Cookie + Referer 头重试（2026-08 起）。
-
-#### 煎蛋 (jandan.net)
-
-**URL 模式**：
-
-| URL 模式 | 类型 | 特征 |
-|----------|------|------|
-| `/t/{id}` | 树洞 | OP 正文 + 评论区（JS 动态加载），图片常是内容主体（截图投稿） |
-| `/p/{id}` | 文章 | 长文 + 评论区，服务端渲染 |
-
-**采集策略（三层降级）**：
-
-| 层级 | 方式 | 能拿到 | 拿不到 |
-|------|------|--------|--------|
-| L1 | `forum_scraper.py` 通用处理器 | OP 正文（服务端渲染） | 评论区（JS 动态加载） |
-| L2 | `web_fetch_full.py` (local Playwright) | 正文 + 全部评论 + 图片 | — |
-| L3 | 已登录浏览器 | 正文 + 全部评论 + 图片 | —（共享会话时仅 L2 失败后串行使用） |
-
-**⚠️ `/t/` 自动跳转陷阱（2026-08 发现）**：`/t/{id}` 页面渲染后约 2-3 秒会**自动跳转到更新的帖子**，L1/L2/已登录浏览器都可能采到跳转后的一篇（串帖、source 与内容不符）。**可靠做法**：
-- 正文图片 → **SSR 原始 HTML**（`curl` 带浏览器 UA 直接抓，不经 JS 渲染）
-- 评论 → **渲染后的 DOM 提取**（2026-08-04 发现 `api/tucao/all/{id}` 已失效：对有评论的帖子也返回 `data:null`）。用已登录浏览器加载后在页面上下文提取 `.comment-row`：作者/位置/时间/#N楼/评论内容/`#comment_id`/OO/XX。楼层从 `.comment-meta .right-meta` 取，评论 ID 匹配 `/^#\d{8,}$/`，回复评论保留 `@提及` 开头即可（引用的原评论已单独在列表中）
-- 采集后必须核对作者名与 source ID 一致（作者名在 SSR HTML 中，与帖子一一对应）
-
-**执行规则**：
-- 只需正文和图片 → L1 即可
-- 需要评论区 → L1 失败后走 **L2 `web_fetch_full.py`**（local Playwright，独立进程，并发安全）
-- L3 已登录浏览器仅 L2 也失败时才用；共享会话必须串行
-- 图片下载：煎蛋图片无严格反盗链，Python `requests` 可直接下载
-- 图片 OCR：煎蛋树洞图片经常是用户截图投稿（聊天记录、微博截图等），图片即内容。采集时必须检查图片是否含文字，含文字的用 OCR 提取后附在图片下方
-- **标题规范**：标题/目录名**禁止**加「煎蛋无聊图 + ID」前缀（`煎蛋无聊图6184947 — 秃鹫锐评流量时代` ❌）。标题用反映内容的纯中文标题（`秃鹫锐评流量时代` ✅）。源站 ID 保留在 frontmatter `source`，并在正文 H1 下加一行 `> 来源：煎蛋无聊图 No.{id}` 保持可追溯（参考 `战国版韩国黄金时代` 的写法）
+仅当 URL 域名为知乎、NGA 或煎蛋时读取[站点规则](references/site-rules.md)，然后按匹配的 URL 模式执行。普通本地文件和其他域名不加载该参考；未知域名继续走 Step 2.5。
 
 ### Cookie 获取指导
 
@@ -424,6 +285,8 @@ inbox_cleanup: keep_dir   # keep_dir | remove_dir — 处理完后只清文件�
     └── references/
         ├── frontmatter-schema.md
         ├── content-types.md
+        ├── media-inbox.md
+        ├── site-rules.md
         ├── error-handling.md
         └── dashboard-template.md
 ```

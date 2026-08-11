@@ -4,8 +4,8 @@
 写入讨论轮次和总结到 discussions/{slug}/ 目录。
 
 用法：
-  python discussion_writer.py write-round --dir <dir> --round <N> --title <...> ...
-  python discussion_writer.py write-summary --dir <dir> --content <...> ...
+  python discussion_writer.py write-round --dir <dir> --round <N> --title <...> --content-file <file>
+  python discussion_writer.py write-summary --dir <dir> --content-file <file>
   python discussion_writer.py status [--filter created|uncreated|all]
 """
 
@@ -19,6 +19,21 @@ from pathlib import Path
 
 def _ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
+
+
+def _add_content_arguments(parser: argparse.ArgumentParser, help_text: str) -> None:
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--content", help=f"{help_text}（仅适合短单行内容）")
+    group.add_argument(
+        "--content-file",
+        help=f"包含{help_text}的 UTF-8 文件；多行 Markdown 使用此参数",
+    )
+
+
+def _resolve_content(args: argparse.Namespace) -> str:
+    if args.content_file:
+        return Path(args.content_file).read_text(encoding="utf-8")
+    return args.content
 
 
 def _escape(s: str) -> str:
@@ -273,7 +288,7 @@ def main():
     p.add_argument("--dir", required=True, help="discussions/{slug} 目录")
     p.add_argument("--round", type=int, required=True, help="轮次编号")
     p.add_argument("--title", required=True, help="本轮角度")
-    p.add_argument("--content", required=True, help="Markdown 正文")
+    _add_content_arguments(p, "Markdown 正文")
     p.add_argument("--category", default="")
     p.add_argument("--tags", default="")
     p.add_argument("--based-on", default="")
@@ -281,7 +296,7 @@ def main():
     # write-summary
     p = sub.add_parser("write-summary")
     p.add_argument("--dir", required=True, help="discussions/{slug} 目录，slug 从 basename 推导")
-    p.add_argument("--content", required=True, help="总结正文（含讨论回顾 + 创作交接）")
+    _add_content_arguments(p, "总结正文（含讨论回顾 + 创作交接）")
     p.add_argument("--category", default="")
     p.add_argument("--tags", default="")
     p.add_argument("--rounds", type=int, default=0)
@@ -299,10 +314,10 @@ def main():
     try:
         if args.command == "write-round":
             result = write_round(args.dir, args.round, args.title,
-                                 args.content, args.category,
+                                 _resolve_content(args), args.category,
                                  args.tags, args.based_on)
         elif args.command == "write-summary":
-            result = write_summary(args.dir, args.content,
+            result = write_summary(args.dir, _resolve_content(args),
                                    args.category, args.tags,
                                    args.rounds, args.based_on)
         elif args.command == "status":

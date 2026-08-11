@@ -112,6 +112,58 @@ class SkillContractTests(unittest.TestCase):
                 result.stderr,
             )
 
+    def test_write_clis_preserve_multiline_markdown_from_content_file(self) -> None:
+        scripts = REPO_ROOT / "inkwell-write" / "scripts"
+        body = "## 第一段\n\n正文。\n\n- 项目一\n- 项目二"
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            content_file = root / "content.md"
+            content_file.write_text(body, encoding="utf-8")
+
+            cases = (
+                (
+                    scripts / "discussion_writer.py",
+                    ("write-round", "--dir", str(root / "discussions/topic"),
+                     "--round", "1", "--title", "第一轮"),
+                    root / "discussions/topic/rounds/01-第一轮.md",
+                ),
+                (
+                    scripts / "discussion_writer.py",
+                    ("write-summary", "--dir", str(root / "discussions/topic")),
+                    root / "discussions/topic/topic讨论总结.md",
+                ),
+                (
+                    scripts / "outline_writer.py",
+                    ("write", "--dir", str(root / "creations/article"),
+                     "--title", "测试提纲"),
+                    root / "creations/article/outline.md",
+                ),
+                (
+                    scripts / "draft_writer.py",
+                    ("write", "--dir", str(root / "creations/article"),
+                     "--title", "测试文章"),
+                    root / "creations/article/drafts/v1.md",
+                ),
+            )
+
+            for script, arguments, output_path in cases:
+                with self.subTest(script=script.name, command=arguments[0]):
+                    result = subprocess.run(
+                        [sys.executable, str(script), *arguments,
+                         "--content-file", str(content_file)],
+                        text=True,
+                        capture_output=True,
+                        check=False,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertTrue(output_path.is_file(), output_path)
+                    self.assertTrue(
+                        output_path.read_text(encoding="utf-8").endswith(
+                            f"\n\n{body}\n"
+                        )
+                    )
+
 
 if __name__ == "__main__":
     unittest.main()

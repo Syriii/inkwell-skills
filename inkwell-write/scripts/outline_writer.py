@@ -4,7 +4,7 @@
 写入创作提纲到 creations/{article-slug}/outline.md。
 
 用法：
-  python outline_writer.py write --dir <dir> --title <...> --content <...>
+  python outline_writer.py write --dir <dir> --title <...> --content-file <file>
 """
 
 import argparse
@@ -12,6 +12,21 @@ import json
 import sys
 from datetime import datetime
 from pathlib import Path
+
+
+def _add_content_arguments(parser: argparse.ArgumentParser) -> None:
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--content", help="提纲 Markdown（仅适合短单行内容）")
+    group.add_argument(
+        "--content-file",
+        help="包含提纲 Markdown 的 UTF-8 文件；多行内容使用此参数",
+    )
+
+
+def _resolve_content(args: argparse.Namespace) -> str:
+    if args.content_file:
+        return Path(args.content_file).read_text(encoding="utf-8")
+    return args.content
 
 
 def _escape(s: str) -> str:
@@ -73,7 +88,7 @@ def main():
     p = sub.add_parser("write")
     p.add_argument("--dir", required=True, help="creations/{article-slug} 目录")
     p.add_argument("--title", required=True, help="文章标题")
-    p.add_argument("--content", required=True, help="提纲 Markdown")
+    _add_content_arguments(p)
     p.add_argument("--category", default="")
     p.add_argument("--tags", default="")
     p.add_argument("--based-on", default="")
@@ -82,7 +97,7 @@ def main():
 
     try:
         if args.command == "write":
-            result = write_outline(args.dir, args.title, args.content,
+            result = write_outline(args.dir, args.title, _resolve_content(args),
                                    args.category, args.tags, args.based_on)
         else:
             result = {"error": f"unknown command: {args.command}"}

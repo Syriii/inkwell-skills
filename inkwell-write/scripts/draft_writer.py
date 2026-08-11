@@ -7,10 +7,12 @@
 - 旧版本全部保留在 drafts/ 下
 
 用法：
-  python draft_writer.py write --dir <dir> --title <...> --content <...>
-  python draft_writer.py archive-and-write --dir <dir> --title <...> --content <...>
+  python draft_writer.py write --dir <dir> --title <...> --content-file <file>
+  python draft_writer.py archive-and-write --dir <dir> --title <...> --content-file <file>
   python draft_writer.py update-status --dir <dir> --status article
 """
+
+from __future__ import annotations
 
 import argparse
 import json
@@ -18,6 +20,21 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
+
+
+def _add_content_arguments(parser: argparse.ArgumentParser) -> None:
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--content", help="文章正文 Markdown（仅适合短单行内容）")
+    group.add_argument(
+        "--content-file",
+        help="包含文章正文 Markdown 的 UTF-8 文件；多行内容使用此参数",
+    )
+
+
+def _resolve_content(args: argparse.Namespace) -> str:
+    if args.content_file:
+        return Path(args.content_file).read_text(encoding="utf-8")
+    return args.content
 
 
 def _escape(s: str) -> str:
@@ -211,7 +228,7 @@ def main():
     p = sub.add_parser("write")
     p.add_argument("--dir", required=True, help="creations/{article-slug} 目录")
     p.add_argument("--title", required=True, help="文章标题")
-    p.add_argument("--content", required=True, help="文章正文 Markdown")
+    _add_content_arguments(p)
     p.add_argument("--category", default="")
     p.add_argument("--tags", default="")
     p.add_argument("--based-on", default="", help="逗号分隔的素材引用路径")
@@ -223,7 +240,7 @@ def main():
     p = sub.add_parser("archive-and-write")
     p.add_argument("--dir", required=True, help="creations/{article-slug} 目录")
     p.add_argument("--title", required=True, help="文章标题")
-    p.add_argument("--content", required=True, help="文章正文 Markdown")
+    _add_content_arguments(p)
     p.add_argument("--category", default="")
     p.add_argument("--tags", default="")
     p.add_argument("--based-on", default="", help="逗号分隔的素材引用路径")
@@ -240,12 +257,12 @@ def main():
 
     try:
         if args.command == "write":
-            result = write_draft(args.dir, args.title, args.content,
+            result = write_draft(args.dir, args.title, _resolve_content(args),
                                  args.category, args.tags, args.based_on,
                                  args.word_count, args.status,
                                  args.source_discussions)
         elif args.command == "archive-and-write":
-            result = archive_and_write(args.dir, args.title, args.content,
+            result = archive_and_write(args.dir, args.title, _resolve_content(args),
                                        args.category, args.tags, args.based_on,
                                        args.word_count, args.status,
                                        args.source_discussions)

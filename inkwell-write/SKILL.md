@@ -22,6 +22,8 @@ description: >
 
 - 将当前 `SKILL.md` 所在目录解析为 `<skill-dir>`，将当前内容项目根解析为 `<project-root>`；不要依赖 `.claude`、`.codex` 或机器绝对路径。
 - 需要外部检索或网页阅读时，先读取[宿主兼容说明](references/host-compatibility.md)，使用当前宿主可用且已授权的能力。
+- 正常的讨论、提纲和草稿写入直接执行下方已文档化的 CLI，不预先通读脚本源码；仅在命令失败、需要调试或用户要求修改实现时读取对应脚本。
+- 参考文件按步骤读取：讨论模式不加载写作审查或文风参考；进入对应创作步骤时再读取明确指定的章节或文件。
 
 ## 启动检查
 
@@ -167,14 +169,14 @@ python <skill-dir>/scripts/references_builder.py update \
 
 ### 写入
 
-所有脚本路径统一使用项目根目录的相对路径。
+所有脚本路径统一使用项目根目录的相对路径。多行 Markdown 正文必须用 `--content-file` 传入 UTF-8 文件，避免 shell 转义把换行写成字面量 `\\n`；短单行内容才使用 `--content`。两者只能选一个。
 
 **每轮**：
 ```bash
 python <skill-dir>/scripts/discussion_writer.py write-round \
   --dir "discussions/{slug}" --round <N> \
   --title "<角度>" --category "<分类>" --tags "<标签>" \
-  --based-on "<引用路径>" --content "<正文>"
+  --based-on "<引用路径>" --content-file "<正文Markdown文件>"
 ```
 
 **总结**（合并了原 初步结果，同时承担讨论回顾 + 创作交接）：
@@ -182,7 +184,7 @@ python <skill-dir>/scripts/discussion_writer.py write-round \
 python <skill-dir>/scripts/discussion_writer.py write-summary \
   --dir "discussions/{slug}" \
   --category "<分类>" --tags "<标签>" --rounds <N> \
-  --based-on "<引用路径>" --content "<正文>"
+  --based-on "<引用路径>" --content-file "<正文Markdown文件>"
 ```
 
 > summary 的 slug 从 `--dir` 的 basename 自动推导，文件名 `{slug}讨论总结.md`。
@@ -282,7 +284,7 @@ python <skill-dir>/scripts/references_builder.py show --dir "discussions/{slug}"
 python <skill-dir>/scripts/outline_writer.py write \
   --dir "creations/{article-slug}" --title "<标题>" \
   --category "<分类>" --tags "<标签>" \
-  --based-on "<引用路径>" --content "<提纲>"
+  --based-on "<引用路径>" --content-file "<提纲Markdown文件>"
 ```
 4. 提纲确认后，读取同一参考的“逻辑链推导”，判断递进式或并列式，推导并呈现逻辑链；用户确认后进入 Step 3。
 
@@ -298,7 +300,7 @@ python <skill-dir>/scripts/draft_writer.py write \
   --status draft --word-count <N> \
   --based-on "<引用路径>" \
   --source-discussions "<讨论slug列表>" \
-  --content "<正文>"
+  --content-file "<正文Markdown文件>"
 ```
 
 #### Step 4: 审阅迭代
