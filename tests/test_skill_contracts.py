@@ -69,6 +69,13 @@ class SkillContractTests(unittest.TestCase):
                 for term in terms:
                     self.assertIn(term, frontmatter)
 
+    def test_project_docs_separate_host_compatibility_from_skill_composition(self) -> None:
+        interop = (REPO_ROOT / "docs/interop.md").read_text(encoding="utf-8")
+        claude = (REPO_ROOT / "CLAUDE.md").read_text(encoding="utf-8")
+        self.assertIn("宿主兼容不是技能组合", interop)
+        self.assertIn("两个正交维度", interop)
+        self.assertIn("不得创建要求三个技能同时存在的技能契约测试", claude)
+
     def test_direct_sibling_reference_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

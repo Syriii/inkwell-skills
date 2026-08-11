@@ -1,5 +1,30 @@
 # Progress Log
 
+## Session: 2026-08-11
+
+### 三技能独立性与双宿主改造
+- 将 `inkwell-capture`、`inkwell-search`、`inkwell-write` 明确为三个独立、自包含技能
+- 移除兄弟技能引用、固定业务目录、隐式自动衔接和固定宿主路径
+- 新增 Codex `agents/openai.yaml`，保留 Claude Code 独立安装布局
+- 新增标准库验证器和契约测试，分别模拟三个技能在 Codex 与 Claude Code 中只安装自身
+- 正式提交：`55b73d4`、`876efae`、`c498fce`、`ac0a5d1`
+
+### `inkwell-capture` 煎蛋专用采集优化
+- 使用 `https://jandan.net/t/6192383` 完成真实采集验证
+- 新增 `scripts/forum/jandan.py` 与 `scripts/jandan_capture.py`
+- L1 明确报告评论不完整，不再误报 `comment_count=1`
+- 渲染层取得 10 条正式评论，排除 4 条热门重复，正文图片与 UI 图片精确分流
+- 新增脱敏 fixture 与 6 项适配器回归测试；正式仓库 8 项独立性、双宿主与文档契约测试通过
+- 正式提交：`f8168b2 feat(capture): add deterministic Jandan collector`
+
+### 架构解释纠偏
+- 用户再次强调三个技能必须各自独立运行
+- 纠正将“同一技能的 Codex/Claude 兼容验证”表述为“跨宿主真实端到端测试”的误解
+- 固化规则：宿主兼容与技能组合是正交维度；不再把三技能串联测试列为优化阶段
+- 更新 README、CLAUDE、互操作约定、当前计划、发现记录和回归测试
+
+---
+
 ## Session: 2026-07-16 (continued 2026-07-17)
 
 ### Phase 1: Collection Subsystem — Design
